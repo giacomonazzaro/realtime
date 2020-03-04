@@ -32,7 +32,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
     add_definitions(-DIMGUI_IMPL_OPENGL_LOADER_GLAD)
 
     add_library(yocto_opengl
-        yocto_opengl.h yocto_opengl.cpp yocto_image.cpp yocto_modelio.cpp
+        yocto_opengl.h yocto_opengl.cpp yocto_image.cpp yocto_modelio.cpp yocto_window.cpp
         # yocto_font.h yocto_font.cpp
         ext/imgui/imgui.cpp ext/imgui/imgui_draw.cpp ext/imgui/imgui_widgets.cpp
         ext/imgui/imgui_impl_glfw.cpp ext/imgui/imgui_impl_opengl3.cpp ext/glad/glad.c)
