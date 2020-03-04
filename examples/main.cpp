@@ -28,7 +28,7 @@ int main(int num_args, const char *args[]) {
     auto shader = opengl_program{};
     init_glprogram(shader, vertex.c_str(), fragment.c_str(), false);
 
-    auto shape = load_shape("dslda.obj");
+    auto shape = load_shape("data/stanford-bunny.obj");
 
     while(!should_glwindow_close(win)) {
         clear_glframebuffer({0, 0, 1, 1});
