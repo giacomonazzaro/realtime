@@ -1749,7 +1749,7 @@ inline frame3f rotation_frame(const mat3f& rot) {
 
 // Lookat frame. Z-axis can be inverted with inv_xz.
 inline frame3f lookat_frame(const vec3f& eye, const vec3f& center,
-    const vec3f& up, bool inv_xz = false) {
+  const vec3f& up = {0, 1, 0}, bool inv_xz = false) {
   auto w = normalize(eye - center);
   auto u = normalize(cross(up, w));
   auto v = normalize(cross(w, u));

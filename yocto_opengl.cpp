@@ -1338,12 +1338,12 @@ void delete_glshape(opengl_shape& glshape) {
   delete_opengl_vertex_array_object(glshape.vao);
 }
 
-mat4f make_view_matrix(const opengl_camera& camera, const vec2f viewport) {
+mat4f make_view_matrix(const opengl_camera& camera) {
   return mat4f(inverse(camera.frame));
 }
 
 mat4f make_projection_matrix(
-    const opengl_camera& camera, const vec2f viewport, float near, float far) {
+    const opengl_camera& camera, const vec2i& viewport, float near, float far) {
   auto camera_aspect = (float)viewport.x / (float)viewport.y;
   auto camera_yfov =
       camera_aspect >= 0

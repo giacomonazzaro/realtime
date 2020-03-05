@@ -390,8 +390,8 @@ void delete_glshape(opengl_shape& glshape);
 
 void init_glquad(opengl_shape& shape);
 
-mat4f make_view_matrix(const opengl_camera& camera, const vec2f viewport);
-mat4f make_projection_matrix(const opengl_camera& camera, const vec2f viewport,
+mat4f make_view_matrix(const opengl_camera& camera);
+mat4f make_projection_matrix(const opengl_camera& camera, const vec2i& viewport,
     float near = 0.01, float far = 10000);
 
 }  // namespace yocto
