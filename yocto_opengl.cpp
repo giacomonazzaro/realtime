@@ -17,7 +17,9 @@
 // -----------------------------------------------------------------------------
 // LOW-LEVEL OPENGL FUNCTIONS
 // -----------------------------------------------------------------------------
-namespace yocto {
+// namespace yocto {
+namespace opengl {
+using namespace yocto;
 
 void check_glerror() {
   assert(glGetError() == GL_NO_ERROR);
@@ -595,8 +597,8 @@ void draw_glscene(opengl_scene& state, const vec4i& viewport,
   auto  camera_aspect = (float)viewport.z / (float)viewport.w;
   auto  camera_yfov =
       camera_aspect >= 0
-          ? (2 * atan(glcamera.film / (camera_aspect * 2 * glcamera.lens)))
-          : (2 * atan(glcamera.film / (2 * glcamera.lens)));
+          ? (2 * yocto::atan(glcamera.film / (camera_aspect * 2 * glcamera.lens)))
+          : (2 * yocto::atan(glcamera.film / (2 * glcamera.lens)));
   auto camera_view = mat4f(inverse(glcamera.frame));
   auto camera_proj = perspective_mat(
       camera_yfov, camera_aspect, params.near, params.far);
@@ -1303,9 +1305,9 @@ mat4f make_projection_matrix(
   auto camera_aspect = (float)viewport.x / (float)viewport.y;
   auto camera_yfov =
       camera_aspect >= 0
-          ? (2 * atan(camera.film / (camera_aspect * 2 * camera.lens)))
-          : (2 * atan(camera.film / (2 * camera.lens)));
+          ? (2 * yocto::atan(camera.film / (camera_aspect * 2 * camera.lens)))
+          : (2 * yocto::atan(camera.film / (2 * camera.lens)));
   return perspective_mat(camera_yfov, camera_aspect, near, far);
 }
 
-}  // namespace yocto
+}

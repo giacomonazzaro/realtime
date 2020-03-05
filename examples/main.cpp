@@ -7,6 +7,7 @@ using namespace std;
 #include "../yocto_opengl.h"
 #include "../yocto_window.h"
 using namespace yocto;
+using namespace opengl;
 
 int main(int num_args, const char *args[]) {
   // Init window.

@@ -13,7 +13,9 @@
 // -----------------------------------------------------------------------------
 // LOW-LEVEL OPENGL OBJECTS
 // -----------------------------------------------------------------------------
-namespace yocto {
+// namespace yocto {
+namespace opengl {
+using namespace yocto;
 
 // OpenGL program
 struct opengl_program {
