@@ -17,12 +17,6 @@ namespace yocto {
 
 // OpenGL program
 struct opengl_program {
-  opengl_program() {}
-  opengl_program(opengl_program&&);
-  opengl_program& operator=(opengl_program&&);
-  ~opengl_program();
-  operator bool() const { return (bool)program_id; }
-
   string vertex_code;
   string fragment_code;
   string vertex_filename;
@@ -30,48 +24,34 @@ struct opengl_program {
   uint   program_id         = 0;
   uint   vertex_shader_id   = 0;
   uint   fragment_shader_id = 0;
+  operator bool() const { return (bool)program_id; }
 };
 
 // OpenGL texture
 struct opengl_texture {
-  opengl_texture() {}
-  opengl_texture(opengl_texture&&);
-  opengl_texture& operator=(opengl_texture&&);
-  ~opengl_texture();
-  operator bool() const { return (bool)texture_id; }
-
   uint  texture_id = 0;
   vec2i size       = {0, 0};
   bool  mipmap     = false;
   bool  linear     = false;
   bool  is_srgb    = false;
   bool  is_float   = false;
+  operator bool() const { return (bool)texture_id; }
 };
 
 // OpenGL vertex buffer
 struct opengl_arraybuffer {
-  opengl_arraybuffer() {}
-  opengl_arraybuffer(opengl_arraybuffer&&);
-  opengl_arraybuffer& operator=(opengl_arraybuffer&&);
-  ~opengl_arraybuffer();
-  operator bool() const { return (bool)buffer_id; }
-
   uint buffer_id = 0;
   int  num       = 0;
   int  elem_size = 0;
+  operator bool() const { return (bool)buffer_id; }
 };
 
 // OpenGL element buffer
-struct opengl_elementbuffer {
-  opengl_elementbuffer() {}
-  opengl_elementbuffer(opengl_elementbuffer&&);
-  opengl_elementbuffer& operator=(opengl_elementbuffer&&);
-  ~opengl_elementbuffer();
-  operator bool() const { return (bool)buffer_id; }
-
+struct opengl_elementbuffer {  
   uint buffer_id = 0;
   int  num       = 0;
   int  elem_size = 0;
+  operator bool() const { return (bool)buffer_id; }
 };
 
 // }  // namespace yocto
@@ -93,11 +73,12 @@ struct opengl_shape {
 
 // OpenGL image data
 struct opengl_image {
-  vec2i          size() const { return texture.size; }
-                 operator bool() const { return (bool)texture; }
   opengl_texture texture = {};
   opengl_program program = {};
   opengl_shape   shape   = {};
+  
+  vec2i size() const { return texture.size; }
+  operator bool() const { return (bool)texture; }
 };
 
 // OpenGL image drawing params

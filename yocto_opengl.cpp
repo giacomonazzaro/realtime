@@ -641,17 +641,6 @@ void draw_glscene(opengl_scene& state, const vec4i& viewport,
 // LOW-LEVEL OPENGL FUNCTIONS
 // -----------------------------------------------------------------------------
 
-opengl_program::opengl_program(opengl_program&& other) {
-  operator=(std::forward<opengl_program>(other));
-}
-opengl_program& opengl_program::operator=(opengl_program&& other) {
-  std::swap(program_id, other.program_id);
-  std::swap(vertex_shader_id, other.vertex_shader_id);
-  std::swap(fragment_shader_id, other.fragment_shader_id);
-  return *this;
-}
-opengl_program::~opengl_program() { delete_glprogram(*this); }
-
 void reload_glprogram(opengl_program& program) {
   load_text(program.vertex_filename, program.vertex_code);
   load_text(program.fragment_filename, program.fragment_code);
@@ -748,16 +737,6 @@ void delete_glprogram(opengl_program& program) {
   program.fragment_shader_id = 0;
 }
 
-opengl_texture::opengl_texture(opengl_texture&& other) {
-  operator=(std::forward<opengl_texture>(other));
-}
-opengl_texture& opengl_texture::operator=(opengl_texture&& other) {
-  std::swap(texture_id, other.texture_id);
-  std::swap(size, other.size);
-  return *this;
-}
-opengl_texture::~opengl_texture() { delete_gltexture(*this); }
-
 void init_gltexture(opengl_texture& texture, const vec2i& size, bool as_float,
     bool as_srgb, bool linear, bool mipmap) {
   if (texture) delete_gltexture(texture);
@@ -843,17 +822,6 @@ void delete_gltexture(opengl_texture& texture) {
   texture.size       = zero2i;
 }
 
-opengl_arraybuffer::opengl_arraybuffer(opengl_arraybuffer&& other) {
-  operator=(std::forward<opengl_arraybuffer>(other));
-}
-opengl_arraybuffer& opengl_arraybuffer::operator=(opengl_arraybuffer&& other) {
-  std::swap(buffer_id, other.buffer_id);
-  std::swap(num, other.num);
-  std::swap(elem_size, other.elem_size);
-  return *this;
-}
-opengl_arraybuffer::~opengl_arraybuffer() { delete_glarraybuffer(*this); }
-
 template <typename T>
 void init_glarray_buffer_impl(
     opengl_arraybuffer& buffer, const vector<T>& array, bool dynamic) {
@@ -892,18 +860,6 @@ void delete_glarraybuffer(opengl_arraybuffer& buffer) {
   buffer.elem_size = 0;
   buffer.num       = 0;
 }
-
-opengl_elementbuffer::opengl_elementbuffer(opengl_elementbuffer&& other) {
-  operator=(std::forward<opengl_elementbuffer>(other));
-}
-opengl_elementbuffer& opengl_elementbuffer::operator=(
-    opengl_elementbuffer&& other) {
-  std::swap(buffer_id, other.buffer_id);
-  std::swap(num, other.num);
-  std::swap(elem_size, other.elem_size);
-  return *this;
-}
-opengl_elementbuffer::~opengl_elementbuffer() { delete_glelementbuffer(*this); }
 
 template <typename T>
 void init_glelementbuffer_impl(
