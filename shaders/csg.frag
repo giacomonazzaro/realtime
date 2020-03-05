@@ -9,7 +9,7 @@ uniform vec3 eye;
 
 struct CsgNode {
   ivec2 children;
-  float params[6];
+  float params[5];
   int   type;
 };
 
@@ -53,8 +53,8 @@ float sdf(vec3 position) {
     if (nodes[i].children == ivec2(-1, -1)) {
       values[i] = eval_primitive(position, nodes[i]);
     } else {
-      float f    = values[nodes[i].children.x];
-      float g    = values[nodes[i].children.y];
+      float f = values[nodes[i].children.x];
+      float g = values[nodes[i].children.y];
       values[i] = eval_operation(f, g, nodes[i]);
     }
   }
@@ -72,10 +72,8 @@ vec3 compute_normal(vec3 p) {
 
 void main() {
   vec3 p  = position - vec3(0.5);
-  // color = vec4(p, 1);
-  // return;
   vec3 rd = normalize(position - eye);
-  for (int i = 0; i < 10; i++) {
+  for (int i = 0; i < 32; i++) {
     float f = sdf(p);
     if (abs(f) < 0.01) {
       vec3 normal = compute_normal(p);

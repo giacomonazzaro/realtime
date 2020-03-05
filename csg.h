@@ -9,7 +9,7 @@ struct CsgOperation {
   float softness;
 };
 
-#define CSG_NUM_PARAMS 6
+#define CSG_NUM_PARAMS 5
 struct CsgPrimitve {
   float          params[CSG_NUM_PARAMS];
   primitive_type type;
