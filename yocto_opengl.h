@@ -375,7 +375,7 @@ void delete_glshape(opengl_shape& glshape);
 void init_glquad(opengl_shape& shape);
 
 opengl_camera make_lookat_camera(
-    const vec3f& from, const vec3f& to, const vec3f& up = {1, 1, 1});
+    const vec3f& from, const vec3f& to, const vec3f& up = {0, 1, 0});
 
 mat4f make_view_matrix(const opengl_camera& camera);
 mat4f make_projection_matrix(const opengl_camera& camera, const vec2i& viewport,

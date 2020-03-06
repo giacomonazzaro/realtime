@@ -40,39 +40,41 @@ void update_camera(frame3f& frame, float& focus, vec2f& mouse_pos,
     if (mouse_left && !shift_down) rotate = (mouse_pos - last_pos) / 100.0f;
     if (mouse_right) dolly = (mouse_pos.x - last_pos.x) / 100.0f;
     if (mouse_left && shift_down) pan = (mouse_pos - last_pos) * focus / 200.0f;
-    pan.x = -pan.x;
+    pan.x    = -pan.x;
+    rotate.y = -rotate.y;
     update_turntable(frame, focus, rotate, dolly, pan);
   }
 }
 
-void _glfw_drop_callback(GLFWwindow* glfw, int num, const char** paths) {
-  auto& win = *(const opengl_window*)glfwGetWindowUserPointer(glfw);
-  if (win.drop_cb) {
-    auto pathv = vector<string>();
-    for (auto i = 0; i < num; i++) pathv.push_back(paths[i]);
-    win.drop_cb(win, pathv);
-  }
-}
+// void _glfw_drop_callback(GLFWwindow* glfw, int num, const char** paths) {
+//  auto& win = *(const opengl_window*)glfwGetWindowUserPointer(glfw);
+//  if (win.drop_cb) {
+//    auto pathv = vector<string>();
+//    for (auto i = 0; i < num; i++) pathv.push_back(paths[i]);
+//    win.drop_cb(win, pathv);
+//  }
+//}
+//
+// void _glfw_key_callback(
+//    GLFWwindow* glfw, int key, int scancode, int action, int mods) {
+//  auto& win = *(const opengl_window*)glfwGetWindowUserPointer(glfw);
+//  if (win.key_cb) win.key_cb(win, (opengl_key)key, (bool)action);
+//}
+//
+// void _glfw_click_callback(GLFWwindow* glfw, int button, int action, int mods)
+// {
+//  auto& win = *(const opengl_window*)glfwGetWindowUserPointer(glfw);
+//  if (win.click_cb)
+//    win.click_cb(win, button == GLFW_MOUSE_BUTTON_LEFT, (bool)action);
+//}
+//
+// void _glfw_scroll_callback(GLFWwindow* glfw, double xoffset, double yoffset)
+// {
+//  auto& win = *(const opengl_window*)glfwGetWindowUserPointer(glfw);
+//  if (win.scroll_cb) win.scroll_cb(win, (float)yoffset);
+//}
 
-void _glfw_key_callback(
-    GLFWwindow* glfw, int key, int scancode, int action, int mods) {
-  auto& win = *(const opengl_window*)glfwGetWindowUserPointer(glfw);
-  if (win.key_cb) win.key_cb(win, (opengl_key)key, (bool)action);
-}
-
-void _glfw_click_callback(GLFWwindow* glfw, int button, int action, int mods) {
-  auto& win = *(const opengl_window*)glfwGetWindowUserPointer(glfw);
-  if (win.click_cb)
-    win.click_cb(win, button == GLFW_MOUSE_BUTTON_LEFT, (bool)action);
-}
-
-void _glfw_scroll_callback(GLFWwindow* glfw, double xoffset, double yoffset) {
-  auto& win = *(const opengl_window*)glfwGetWindowUserPointer(glfw);
-  if (win.scroll_cb) win.scroll_cb(win, (float)yoffset);
-}
-
-void init_glwindow(opengl_window& win, const vec2i& size, const string& title,
-    void* user_pointer) {
+void init_glwindow(opengl_window& win, const vec2i& size, const string& title) {
   // init glfw
   if (!glfwInit())
     throw std::runtime_error("cannot initialize windowing system");
@@ -84,23 +86,85 @@ void init_glwindow(opengl_window& win, const vec2i& size, const string& title,
 #endif
 
   // create window
-  win     = opengl_window();
+  win     = opengl_window{};
   win.win = glfwCreateWindow(size.x, size.y, title.c_str(), nullptr, nullptr);
   if (!win.win) throw std::runtime_error("cannot initialize windowing system");
   glfwMakeContextCurrent(win.win);
   glfwSwapInterval(1);  // Enable vsync
 
   // set user data
-  // glfwSetWindowRefreshCallback(win.win, _glfw_refresh_callback);
   glfwSetWindowUserPointer(win.win, &win);
-  win.user_ptr = user_pointer;
+
+  // set callbacks
+  glfwSetWindowRefreshCallback(win.win, [](GLFWwindow* glfw) {
+    auto win = (opengl_window*)glfwGetWindowUserPointer(glfw);
+    win->draw_cb(win, win->input);
+  });
+  glfwSetDropCallback(
+      win.win, [](GLFWwindow* glfw, int num, const char** paths) {
+        auto win = (opengl_window*)glfwGetWindowUserPointer(glfw);
+        if (win->drop_cb) {
+          auto pathv = vector<string>();
+          for (auto i = 0; i < num; i++) pathv.push_back(paths[i]);
+          win->drop_cb(win, pathv, win->input);
+        }
+      });
+  glfwSetKeyCallback(win.win,
+      [](GLFWwindow* glfw, int key, int scancode, int action, int mods) {
+        auto win = (opengl_window*)glfwGetWindowUserPointer(glfw);
+        if (win->key_cb) win->key_cb(win, key, (bool)action, win->input);
+      });
+  glfwSetMouseButtonCallback(
+      win.win, [](GLFWwindow* glfw, int button, int action, int mods) {
+        auto win = (opengl_window*)glfwGetWindowUserPointer(glfw);
+        if (win->click_cb)
+          win->click_cb(
+              win, button == GLFW_MOUSE_BUTTON_LEFT, (bool)action, win->input);
+      });
+  glfwSetScrollCallback(
+      win.win, [](GLFWwindow* glfw, double xoffset, double yoffset) {
+        auto win = (opengl_window*)glfwGetWindowUserPointer(glfw);
+        if (win->scroll_cb) win->scroll_cb(win, (float)yoffset, win->input);
+      });
+  glfwSetWindowSizeCallback(
+      win.win, [](GLFWwindow* glfw, int width, int height) {
+        auto win = (opengl_window*)glfwGetWindowUserPointer(glfw);
+        glfwGetWindowSize(
+            win->win, &win->input.window_size.x, &win->input.window_size.y);
+        if (win->widgets_width) win->input.window_size.x -= win->widgets_width;
+        glfwGetFramebufferSize(win->win, &win->input.framebuffer_viewport.z,
+            &win->input.framebuffer_viewport.w);
+        win->input.framebuffer_viewport.x = 0;
+        win->input.framebuffer_viewport.y = 0;
+        if (win->widgets_width) {
+          auto win_size = zero2i;
+          glfwGetWindowSize(win->win, &win_size.x, &win_size.y);
+          auto offset = (int)(win->widgets_width *
+                              (float)win->input.framebuffer_viewport.z /
+                              win_size.x);
+          win->input.framebuffer_viewport.z -= offset;
+          if (win->widgets_left) win->input.framebuffer_viewport.x += offset;
+        }
+      });
 
   // init gl extensions
   if (!gladLoadGL())
     throw std::runtime_error("cannot initialize OpenGL extensions");
 
-  glPointSize(10);
-  glDepthFunc(GL_LEQUAL);
+  // widgets
+  bool widgets = 1;
+  if (widgets) {
+    ImGui::CreateContext();
+    ImGui::GetIO().IniFilename       = nullptr;
+    ImGui::GetStyle().WindowRounding = 0;
+    ImGui_ImplGlfw_InitForOpenGL(win.win, true);
+#ifndef __APPLE__
+    ImGui_ImplOpenGL3_Init();
+#else
+    ImGui_ImplOpenGL3_Init("#version 330");
+#endif
+    ImGui::StyleColorsDark();
+  }
 }
 
 void delete_glwindow(opengl_window& win) {
@@ -109,27 +173,27 @@ void delete_glwindow(opengl_window& win) {
   win.win = nullptr;
 }
 
-void* get_gluser_pointer(const opengl_window& win) { return win.user_ptr; }
+// void* get_gluser_pointer(const opengl_window& win) { return win.user_ptr; }
 
-void set_drop_glcallback(opengl_window& win, drop_glcallback drop_cb) {
-  win.drop_cb = drop_cb;
-  glfwSetDropCallback(win.win, _glfw_drop_callback);
-}
-
-void set_key_glcallback(opengl_window& win, key_glcallback cb) {
-  win.key_cb = cb;
-  glfwSetKeyCallback(win.win, _glfw_key_callback);
-}
-
-void set_click_glcallback(opengl_window& win, click_glcallback cb) {
-  win.click_cb = cb;
-  glfwSetMouseButtonCallback(win.win, _glfw_click_callback);
-}
-
-void set_scroll_glcallback(opengl_window& win, scroll_glcallback cb) {
-  win.scroll_cb = cb;
-  glfwSetScrollCallback(win.win, _glfw_scroll_callback);
-}
+// void set_drop_glcallback(opengl_window& win, drop_glcallback drop_cb) {
+//  win.drop_cb = drop_cb;
+//  glfwSetDropCallback(win.win, _glfw_drop_callback);
+//}
+//
+// void set_key_glcallback(opengl_window& win, key_glcallback cb) {
+//  win.key_cb = cb;
+//  glfwSetKeyCallback(win.win, _glfw_key_callback);
+//}
+//
+// void set_click_glcallback(opengl_window& win, click_glcallback cb) {
+//  win.click_cb = cb;
+//  glfwSetMouseButtonCallback(win.win, _glfw_click_callback);
+//}
+//
+// void set_scroll_glcallback(opengl_window& win, scroll_glcallback cb) {
+//  win.scroll_cb = cb;
+//  glfwSetScrollCallback(win.win, _glfw_scroll_callback);
+//}
 
 vec2i get_glframebuffer_size(const opengl_window& win) {
   auto size = zero2i;
@@ -840,5 +904,59 @@ void draw_gllog(const opengl_window& win) {
   _log_widget.Draw();
   _log_mutex.unlock();
 }
+
+// void update_input() {
+//   // update input
+//   win->input.mouse_last = win->input.mouse_pos;
+//   auto mouse_posx = 0.0, mouse_posy = 0.0;
+//   glfwGetCursorPos(win.win, &mouse_posx, &mouse_posy);
+//   win->input.mouse_pos = vec2f{(float)mouse_posx, (float)mouse_posy};
+//   if (win->widgets_width && win->widgets_left)
+//     win->input.mouse_pos.x -= win->widgets_width;
+//   win->input.mouse_left = glfwGetMouseButton(
+//                               win.win, GLFW_MOUSE_BUTTON_LEFT) ==
+//                               GLFW_PRESS;
+//   win->input.mouse_right = glfwGetMouseButton(
+//                                win.win, GLFW_MOUSE_BUTTON_RIGHT) ==
+//                                GLFW_PRESS;
+//   win->input.modifier_alt =
+//       glfwGetKey(win.win, GLFW_KEY_LEFT_ALT) == GLFW_PRESS ||
+//       glfwGetKey(win.win, GLFW_KEY_RIGHT_ALT) == GLFW_PRESS;
+//   win->input.modifier_shift =
+//       glfwGetKey(win.win, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ||
+//       glfwGetKey(win.win, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS;
+//   win->input.modifier_ctrl =
+//       glfwGetKey(win.win, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS ||
+//       glfwGetKey(win.win, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS;
+//   glfwGetWindowSize(
+//       win.win, &win->input.window_size.x, &win->input.window_size.y);
+//   if (win->widgets_width) win->input.window_size.x -= win->widgets_width;
+//   glfwGetFramebufferSize(win.win, &win->input.framebuffer_viewport.z,
+//       &win->input.framebuffer_viewport.w);
+//   win->input.framebuffer_viewport.x = 0;
+//   win->input.framebuffer_viewport.y = 0;
+//   if (win->widgets_width) {
+//     auto win_size = zero2i;
+//     glfwGetWindowSize(win.win, &win_size.x, &win_size.y);
+//     auto offset = (int)(win->widgets_width *
+//                         (float)win->input.framebuffer_viewport.z /
+//                         win_size.x);
+//     win->input.framebuffer_viewport.z -= offset;
+//     if (win->widgets_left) win->input.framebuffer_viewport.x += offset;
+//   }
+//   if (win->widgets_width) {
+//     auto io                   = &ImGui::GetIO();
+//     win->input.widgets_active = io->WantTextInput || io->WantCaptureMouse ||
+//                                 io->WantCaptureKeyboard;
+//   }
+
+//   // time
+//   win->input.clock_last = win->input.clock_now;
+//   win->input.clock_now =
+//       std::chrono::high_resolution_clock::now().time_since_epoch().count();
+//   win->input.time_now = (double)win->input.clock_now / 1000000000.0;
+//   win->input.time_delta =
+//       (double)(win->input.clock_now - win->input.clock_last) / 1000000000.0;
+// }
 
 }  // namespace yocto

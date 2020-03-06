@@ -4,37 +4,6 @@
 using namespace yocto;
 using namespace opengl;
 
-const char* vert = R"(
-#version 330
-layout(location = 0) in vec3 vposition;
-layout(location = 1) in vec3 vnormal;
-out vec3 position;
-out vec3 normal;
-
-uniform mat4 frame;
-uniform mat4 view;
-uniform mat4 projection;
-
-void main() {
-  position    = (frame * vec4(vposition, 1)).xyz;
-  normal      = (frame * vec4(vnormal, 0)).xyz;
-  gl_Position = projection * view * vec4(position, 1);
-})";
-
-const char* frag = R"(
-#version 330
-out vec4 result;
-in vec3 position; in vec3 normal;
-
-uniform mat4 frame; uniform mat4 view;
-uniform mat4                     projection;
-
-void main() {
-  vec3 color = vec3(normal.y);
-  color      = color * 0.5 + vec3(0.5);
-  result     = vec4(pow(color, vec3(1 / 2.2)), 1);
-})";
-
 vector<vec3f> compute_normals(
     const vector<vec3i>& triangles, const vector<vec3f>& positions) {
   auto normals = vector<vec3f>{positions.size()};
@@ -50,11 +19,37 @@ vector<vec3f> compute_normals(
   return normals;
 }
 
-inline void mesh_viewer(const ioshape& mesh, const vec2i& viewport,
-    const vec4f& background = {0, 0, 0, 1}) {
+struct mesh_viewer_options {
+  vec2i  viewport          = {500, 500};
+  vec4f  background        = {0, 0, 0, 1};
+  string vertex_filename   = "shaders/mesh.vert";
+  string fragment_filename = "shaders/mesh.frag";
+
+  // Draw callback called every frame and when resizing
+  draw_glcallback draw_cb;
+  // Draw callback for drawing widgets
+  widgets_glcallback widgets_cb;
+  // Drop callback that returns that list of dropped strings.
+  drop_glcallback drop_cb;
+  // Key callback that returns ASCII key, pressed/released flag and modifier
+  // keys
+  key_glcallback key_cb;
+  // Mouse click callback that returns left/right button, pressed/released flag,
+  // modifier keys
+  click_glcallback click_cb;
+  // Scroll callback that returns scroll amount
+  scroll_glcallback scroll_cb;
+  // Update functions called every frame
+  uiupdate_glcallback uiupdate_cb;
+  // Update functions called every frame
+  update_glcallback update_cb;
+};
+
+inline void mesh_viewer(
+    const ioshape& mesh, const mesh_viewer_options& options = {}) {
   // Init window.
   auto win = opengl_window();
-  init_glwindow(win, viewport, "mesh viewer", nullptr);
+  init_glwindow(win, options.viewport, "mesh viewer");
 
   // Init shape.
   auto shape = opengl_shape{};
@@ -74,8 +69,7 @@ inline void mesh_viewer(const ioshape& mesh, const vec2i& viewport,
   auto box_size   = max(size(box));
 
   // Init shader.
-  auto shader = opengl_program{};
-  init_glprogram(shader, vert, frag);
+  auto shader = create_glprogram("shaders/mesh.vert", "shaders/mesh.frag");
 
   // Init camera.
   auto camera = make_lookat_camera(
@@ -84,14 +78,14 @@ inline void mesh_viewer(const ioshape& mesh, const vec2i& viewport,
   // Draw.
   vec2f mouse, last_mouse;
   while (!should_glwindow_close(win)) {
-    clear_glframebuffer(background);
+    clear_glframebuffer(options.background);
     update_camera(camera.frame, camera.focus, mouse, last_mouse, win);
 
     bind_glprogram(shader);
     set_gluniform(shader, "frame", identity4x4f);
     set_gluniform(shader, "view", make_view_matrix(camera));
     set_gluniform(
-        shader, "projection", make_projection_matrix(camera, viewport));
+        shader, "projection", make_projection_matrix(camera, options.viewport));
     draw_glshape(shape);
 
     swap_glbuffers(win);

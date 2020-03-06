@@ -10,5 +10,5 @@ using namespace opengl;
 
 int main(int num_args, const char* args[]) {
   auto mesh = load_shape(args[1]);
-  mesh_viewer(mesh, {300, 300});
+  mesh_viewer(mesh);
 }

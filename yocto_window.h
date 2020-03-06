@@ -90,28 +90,73 @@ enum struct opengl_key : int {
   world_2       = 162   //  non-us #2
 };
 
-struct opengl_window;
-using drop_glcallback =
-    std::function<void(const opengl_window&, const vector<string>&)>;
-using key_glcallback =
-    std::function<void(const opengl_window&, opengl_key, bool)>;
-// is_left_click, is_pressing
-using click_glcallback  = std::function<void(const opengl_window&, bool, bool)>;
-using scroll_glcallback = std::function<void(const opengl_window&, float)>;
-
-struct opengl_window {
-  GLFWwindow*       win           = nullptr;
-  void*             user_ptr      = nullptr;
-  drop_glcallback   drop_cb       = {};
-  key_glcallback    key_cb        = {};
-  click_glcallback  click_cb      = {};
-  scroll_glcallback scroll_cb     = {};
-  int               widgets_width = 0;
-  bool              widgets_left  = true;
+// Input state
+struct opengl_input {
+  bool     mouse_left           = false;  // left button
+  bool     mouse_right          = false;  // right button
+  bool     mouse_middle         = false;  // middle button
+  vec2f    mouse_pos            = {};     // position excluding widgets
+  vec2f    mouse_last           = {};  // last mouse position excluding widgets
+  vec2f    mouse_delta          = {};  // last mouse delta excluding widgets
+  bool     modifier_alt         = false;         // alt modifier
+  bool     modifier_ctrl        = false;         // ctrl modifier
+  bool     modifier_shift       = false;         // shift modifier
+  bool     widgets_active       = false;         // widgets are active
+  uint64_t clock_now            = 0;             // clock now
+  uint64_t clock_last           = 0;             // clock last
+  double   time_now             = 0;             // time now
+  double   time_delta           = 0;             // time delta
+  vec2i    window_size          = {0, 0};        // window size
+  vec4i    framebuffer_viewport = {0, 0, 0, 0};  // framebuffer viewport
 };
 
-void init_glwindow(opengl_window& win, const vec2i& size, const string& title,
-    void* user_pointer);
+struct opengl_window;
+
+// Draw callback called every frame and when resizing
+using draw_glcallback =
+    std::function<void(opengl_window*, const opengl_input& input)>;
+// Draw callback for drawing widgets
+using widgets_glcallback =
+    std::function<void(opengl_window*, const opengl_input& input)>;
+// Drop callback that returns that list of dropped strings.
+using drop_glcallback = std::function<void(
+    opengl_window*, const vector<string>&, const opengl_input& input)>;
+// Key callback that returns ASCII key, pressed/released flag and modifier keys
+using key_glcallback = std::function<void(
+    opengl_window*, int key, bool pressed, const opengl_input& input)>;
+// Mouse click callback that returns left/right button, pressed/released flag,
+// modifier keys
+using click_glcallback = std::function<void(
+    opengl_window*, bool left, bool pressed, const opengl_input& input)>;
+// Scroll callback that returns scroll amount
+using scroll_glcallback = std::function<void(
+    opengl_window*, float amount, const opengl_input& input)>;
+// Update functions called every frame
+using uiupdate_glcallback =
+    std::function<void(opengl_window*, const opengl_input& input)>;
+// Update functions called every frame
+using update_glcallback =
+    std::function<void(opengl_window*, const opengl_input& input)>;
+
+// OpenGL window wrapper
+struct opengl_window {
+  GLFWwindow*         win           = nullptr;
+  string              title         = "";
+  draw_glcallback     draw_cb       = {};
+  widgets_glcallback  widgets_cb    = {};
+  drop_glcallback     drop_cb       = {};
+  key_glcallback      key_cb        = {};
+  click_glcallback    click_cb      = {};
+  scroll_glcallback   scroll_cb     = {};
+  update_glcallback   update_cb     = {};
+  uiupdate_glcallback uiupdate_cb   = {};
+  int                 widgets_width = 0;
+  bool                widgets_left  = true;
+  opengl_input        input         = {};
+  vec4f               background    = {0.15f, 0.15f, 0.15f, 1.0f};
+};
+
+void init_glwindow(opengl_window& win, const vec2i& size, const string& title);
 void delete_glwindow(opengl_window& win);
 
 void set_drop_glcallback(opengl_window& win, drop_glcallback drop_cb);

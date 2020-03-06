@@ -52,3 +52,6 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 # include_directories (source/ext)
 add_executable(test examples/main.cpp)
 target_link_libraries(test yocto_opengl ${OPENGL_gl_LIBRARY} ${GLFW_LIBRARY} ${GL_EXTRA_LIBRARIES})
+
+add_executable(csg examples/csg.cpp)
+target_link_libraries(csg yocto_opengl ${OPENGL_gl_LIBRARY} ${GLFW_LIBRARY} ${GL_EXTRA_LIBRARIES})

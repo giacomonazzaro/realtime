@@ -6,39 +6,40 @@
 using namespace std;
 
 #include "csg.h"
+#include "yocto_commonio.h"
 using namespace yocto;
 
-// file wrapper with RIIA
-struct file_wrapper {
-  file_wrapper() {}
-  ~file_wrapper() {
-    if (fs) fclose(fs);
-  }
-  file_wrapper(const file_wrapper&) = delete;
-  file_wrapper& operator=(const file_wrapper&) = delete;
-  file_wrapper(file_wrapper&& other) {
-    if (this == &other) return;
-    std::swap(filename, other.filename);
-    std::swap(filename, other.filename);
-  }
-  file_wrapper& operator=(file_wrapper&& other) {
-    if (this == &other) return *this;
-    std::swap(filename, other.filename);
-    std::swap(filename, other.filename);
-    return *this;
-  }
+// // file wrapper with RIIA
+// struct file_wrapper {
+//   file_wrapper() {}
+//   ~file_wrapper() {
+//     if (fs) fclose(fs);
+//   }
+//   file_wrapper(const file_wrapper&) = delete;
+//   file_wrapper& operator=(const file_wrapper&) = delete;
+//   file_wrapper(file_wrapper&& other) {
+//     if (this == &other) return;
+//     std::swap(filename, other.filename);
+//     std::swap(filename, other.filename);
+//   }
+//   file_wrapper& operator=(file_wrapper&& other) {
+//     if (this == &other) return *this;
+//     std::swap(filename, other.filename);
+//     std::swap(filename, other.filename);
+//     return *this;
+//   }
 
-  string filename = ""s;
-  FILE*  fs       = nullptr;
-};
+//   string filename = ""s;
+//   FILE*  fs       = nullptr;
+// };
 
-file_wrapper open_file(const string& filename, const string& mode) {
-  auto fs = file_wrapper{};
-  fs.fs   = fopen(filename.c_str(), mode.c_str());
-  if (!fs.fs) throw std::runtime_error{filename + ": file not found"};
-  fs.filename = filename;
-  return fs;
-}
+// file_wrapper open_file(const string& filename, const string& mode) {
+//   auto fs = file_wrapper{};
+//   fs.fs   = fopen(filename.c_str(), mode.c_str());
+//   if (!fs.fs) throw std::runtime_error{filename + ": file not found"};
+//   fs.filename = filename;
+//   return fs;
+// }
 
 bool read_line(file_wrapper& fs, char* buffer, int size) {
   return (bool)fgets(buffer, size, fs.fs);
