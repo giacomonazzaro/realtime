@@ -9,7 +9,6 @@ uniform mat4 view;
 uniform mat4 projection;
 
 void main() {
-    vec4 p = projection * view * frame * vec4(vposition.xyz, 1);
     position = (frame * vec4(vposition, 1)).xyz;
     normal   = (frame * vec4(vnormal, 0)).xyz;
     gl_Position = projection * view * vec4(position, 1);

@@ -23,6 +23,28 @@
 
 namespace yocto {
 
+void update_camera(frame3f& frame, float& focus, vec2f& mouse_pos,
+    vec2f& last_pos, const opengl_window& win) {
+  last_pos         = mouse_pos;
+  mouse_pos        = get_glmouse_pos(win);
+  auto mouse_left  = get_glmouse_left(win);
+  auto mouse_right = get_glmouse_right(win);
+  auto alt_down    = get_glalt_key(win);
+  auto shift_down  = get_glshift_key(win);
+
+  // handle mouse and keyboard for navigation
+  if ((mouse_left || mouse_right) && !alt_down) {
+    auto dolly  = 0.0f;
+    auto pan    = zero2f;
+    auto rotate = zero2f;
+    if (mouse_left && !shift_down) rotate = (mouse_pos - last_pos) / 100.0f;
+    if (mouse_right) dolly = (mouse_pos.x - last_pos.x) / 100.0f;
+    if (mouse_left && shift_down) pan = (mouse_pos - last_pos) * focus / 200.0f;
+    pan.x = -pan.x;
+    update_turntable(frame, focus, rotate, dolly, pan);
+  }
+}
+
 void _glfw_drop_callback(GLFWwindow* glfw, int num, const char** paths) {
   auto& win = *(const opengl_window*)glfwGetWindowUserPointer(glfw);
   if (win.drop_cb) {

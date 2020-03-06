@@ -26,7 +26,7 @@ struct opengl_program {
   uint   program_id         = 0;
   uint   vertex_shader_id   = 0;
   uint   fragment_shader_id = 0;
-  operator bool() const { return (bool)program_id; }
+         operator bool() const { return (bool)program_id; }
 };
 
 // OpenGL texture
@@ -37,7 +37,7 @@ struct opengl_texture {
   bool  linear     = false;
   bool  is_srgb    = false;
   bool  is_float   = false;
-  operator bool() const { return (bool)texture_id; }
+        operator bool() const { return (bool)texture_id; }
 };
 
 // OpenGL vertex buffer
@@ -45,15 +45,15 @@ struct opengl_arraybuffer {
   uint buffer_id = 0;
   int  num       = 0;
   int  elem_size = 0;
-  operator bool() const { return (bool)buffer_id; }
+       operator bool() const { return (bool)buffer_id; }
 };
 
 // OpenGL element buffer
-struct opengl_elementbuffer {  
+struct opengl_elementbuffer {
   uint buffer_id = 0;
   int  num       = 0;
   int  elem_size = 0;
-  operator bool() const { return (bool)buffer_id; }
+       operator bool() const { return (bool)buffer_id; }
 };
 
 // }  // namespace yocto
@@ -78,9 +78,9 @@ struct opengl_image {
   opengl_texture texture = {};
   opengl_program program = {};
   opengl_shape   shape   = {};
-  
+
   vec2i size() const { return texture.size; }
-  operator bool() const { return (bool)texture; }
+        operator bool() const { return (bool)texture; }
 };
 
 // OpenGL image drawing params
@@ -125,6 +125,7 @@ struct opengl_camera {
   float   film   = 0.036;
   float   near   = 0.001;
   float   far    = 10000;
+  float   focus  = flt_max;
 };
 
 // Opengl material
@@ -373,10 +374,13 @@ void delete_glshape(opengl_shape& glshape);
 
 void init_glquad(opengl_shape& shape);
 
+opengl_camera make_lookat_camera(
+    const vec3f& from, const vec3f& to, const vec3f& up = {1, 1, 1});
+
 mat4f make_view_matrix(const opengl_camera& camera);
 mat4f make_projection_matrix(const opengl_camera& camera, const vec2i& viewport,
     float near = 0.01, float far = 10000);
 
-}  // namespace yocto
+}  // namespace opengl
 
 #endif

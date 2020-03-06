@@ -597,7 +597,8 @@ void draw_glscene(opengl_scene& state, const vec4i& viewport,
   auto  camera_aspect = (float)viewport.z / (float)viewport.w;
   auto  camera_yfov =
       camera_aspect >= 0
-          ? (2 * yocto::atan(glcamera.film / (camera_aspect * 2 * glcamera.lens)))
+          ? (2 * yocto::atan(
+                     glcamera.film / (camera_aspect * 2 * glcamera.lens)))
           : (2 * yocto::atan(glcamera.film / (2 * glcamera.lens)));
   auto camera_view = mat4f(inverse(glcamera.frame));
   auto camera_proj = perspective_mat(
@@ -1118,8 +1119,11 @@ void draw_gllines(const opengl_elementbuffer& buffer, int num) {
 }
 
 void draw_gltriangles(const opengl_elementbuffer& buffer, int num) {
+  check_glerror();
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.buffer_id);
+  check_glerror();
   glDrawElements(GL_TRIANGLES, num * 3, GL_UNSIGNED_INT, nullptr);
+  check_glerror();
 }
 
 void draw_glpoints(const opengl_arraybuffer& buffer, int num) {
@@ -1263,7 +1267,7 @@ void draw_glshape(const opengl_shape& shape) {
   bind_opengl_vertex_array_object(shape.vao);
 
   // draw strip of points, lines or triangles
-  if (!shape.elements) {
+  if (0 && !shape.elements) {
     auto& positions = shape.vertex_attributes[0];
     if (shape.type == opengl_shape::type::points) {
       draw_glpoints(positions, positions.num);
@@ -1276,7 +1280,7 @@ void draw_glshape(const opengl_shape& shape) {
   // draw points, lines or triangles
   else {
     auto& elements = shape.elements;
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elements.buffer_id);
+    // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elements.buffer_id);
     if (shape.type == opengl_shape::type::points) {
       draw_glpoints(elements, elements.num);
     } else if (shape.type == opengl_shape::type::lines) {
@@ -1296,6 +1300,14 @@ void delete_glshape(opengl_shape& glshape) {
   delete_opengl_vertex_array_object(glshape.vao);
 }
 
+opengl_camera make_lookat_camera(
+    const vec3f& from, const vec3f& to, const vec3f& up) {
+  auto camera  = opengl_camera{};
+  camera.frame = lookat_frame(from, to);
+  camera.focus = length(from - to);
+  return camera;
+}
+
 mat4f make_view_matrix(const opengl_camera& camera) {
   return mat4f(inverse(camera.frame));
 }
@@ -1310,4 +1322,4 @@ mat4f make_projection_matrix(
   return perspective_mat(camera_yfov, camera_aspect, near, far);
 }
 
-}
+}  // namespace opengl

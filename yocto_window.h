@@ -142,6 +142,9 @@ void process_glevents(const opengl_window& win, bool wait = false);
 void swap_glbuffers(const opengl_window& win);
 bool draw_loop(const opengl_window& win, bool wait = false);
 
+void update_camera(frame3f& frame, float& focus, vec2f& mouse_pos,
+    vec2f& last_pos, const opengl_window& win);
+
 }  // namespace yocto
 
 // -----------------------------------------------------------------------------
