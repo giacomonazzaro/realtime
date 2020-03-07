@@ -174,7 +174,7 @@ bool is_key_pressed(const opengl_window& win, opengl_key key);
 
 void process_glevents(opengl_window& win, bool wait = false);
 void swap_glbuffers(const opengl_window& win);
-bool draw_loop(const opengl_window& win, bool wait = false);
+bool draw_loop(opengl_window& win, bool wait = false);
 
 void update_camera(frame3f& frame, float& focus, const opengl_window& win);
 

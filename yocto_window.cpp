@@ -229,7 +229,8 @@ void set_glwindow_close(const opengl_window& win, bool close) {
 bool draw_loop(opengl_window& win, bool wait) {
   glfwSwapBuffers(win.win);
   process_glevents(win, wait);
-  return glfwWindowShouldClose(win.win);
+  if (glfwWindowShouldClose(win.win)) return true;
+  return false;
 }
 
 vec2f get_glmouse_pos(const opengl_window& win) {

@@ -73,6 +73,27 @@ struct opengl_shape {
   type type = type::triangles;
 };
 
+struct opengl_drawable {
+  opengl_shape*   shape;
+  opengl_program* program;
+};
+
+template <typename Type>
+struct opengl_uniform {
+  const char* name;
+  Type&       value;
+};
+
+// template <typename Func, typename... Args>
+// inline auto run_async(Func&& func,  {
+//   return std::async(std::launch::async, std::forward<Func>(func),
+//       std::forward<Args>(args)...);
+ template <typename Func, typename... Args>
+void draw(const opengl_drawable& xxx, opengl_uniform<Args>... args) {
+    
+    
+}
+
 // OpenGL image data
 struct opengl_image {
   opengl_texture texture = {};
@@ -347,13 +368,26 @@ void draw_gltriangles(const opengl_elementbuffer& buffer, int num);
 void draw_gltriangles(const opengl_arraybuffer& buffer, int num);
 
 template <typename T>
-void add_vertex_attribute(opengl_shape& shape, const vector<T>& data) {
+int set_vertex_attribute(
+    opengl_shape& shape, int index, const vector<T>& data) {
+  bind_opengl_vertex_array_object(shape.vao);
+  // @Speed: update instead of delete
+  delete_glarraybuffer(shape.vertex_attributes[index]);
+  init_glarraybuffer(shape.vertex_attributes[index], data);
+  int elem_size = sizeof(T) / sizeof(float);
+  set_glvertexattrib(index, shape.vertex_attributes[index], elem_size);
+  return index;
+}
+
+template <typename T>
+int add_vertex_attribute(opengl_shape& shape, const vector<T>& data) {
   bind_opengl_vertex_array_object(shape.vao);
   int index = shape.vertex_attributes.size();
   shape.vertex_attributes.push_back({});
   init_glarraybuffer(shape.vertex_attributes.back(), data);
   int elem_size = sizeof(T) / sizeof(float);
   set_glvertexattrib(index, shape.vertex_attributes.back(), elem_size);
+  return index;
 }
 
 template <typename T>
@@ -373,6 +407,8 @@ void draw_glshape(const opengl_shape& shape);
 void delete_glshape(opengl_shape& glshape);
 
 opengl_shape make_glquad(opengl_shape& shape);
+opengl_shape make_glmesh(const vector<vec3i>& triangles,
+    const vector<vec3f>& positions, const vector<vec3f>& normals);
 opengl_shape make_glpath(const vector<vec3f>& position,
     const vector<vec3f>& normals = {}, float eps = 0.01);
 opengl_shape make_glvector_field(const vector<vec3f>& vector_field,

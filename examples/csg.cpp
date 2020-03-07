@@ -18,7 +18,7 @@ int main(int num_args, const char* args[]) {
   auto mesh = ioshape{};
   marching_cubes(
       mesh.triangles, mesh.positions, sdf, {vec3f(-1), vec3f(1)}, vec3i(300));
-  mesh_viewer(mesh);
+  run(mesh_viewer{}, mesh);
 }
 
 vector<vec3i> marching_cube_triangles(const float values[8]) {

@@ -19,30 +19,25 @@ vector<vec3f> compute_normals(
   return normals;
 }
 
-struct mesh_viewer_options {
+struct mesh_viewer {
   vec2i            viewport          = {500, 500};
-  vec4f            background        = {0, 0, 0, 1};
+  vec3f            background        = {0, 0, 0};
   string           vertex_filename   = "shaders/mesh.vert";
   string           fragment_filename = "shaders/mesh.frag";
   opengl_callbacks callbacks         = {};
 };
 
-inline void mesh_viewer(
-    const ioshape& mesh, const mesh_viewer_options& options = {}) {
+inline void run(const mesh_viewer& viewer, const ioshape& mesh) {
   // Init window.
   auto win = opengl_window();
-  init_glwindow(win, options.viewport, "mesh viewer");
-  win.callbacks = options.callbacks;
+  init_glwindow(win, viewer.viewport, "mesh viewer");
+  win.callbacks = viewer.callbacks;
 
   // Init shape.
-  auto shape = opengl_shape{};
-  init_glshape(shape);
   auto normals = mesh.normals.empty()
                      ? compute_normals(mesh.triangles, mesh.positions)
                      : mesh.normals;
-  add_vertex_attribute(shape, mesh.positions);
-  add_vertex_attribute(shape, normals);
-  init_elements(shape, mesh.triangles);
+  auto shape     = make_glmesh(mesh.triangles, mesh.positions, normals);
   auto direction = vec3f{0, 1, 2};
   auto box       = bbox3f{};
   for (auto& p : mesh.positions) {
@@ -53,33 +48,28 @@ inline void mesh_viewer(
 
   // Init shader.
   auto shader = create_glprogram(
-      options.vertex_filename, options.fragment_filename);
+      viewer.vertex_filename, viewer.fragment_filename);
 
   // Init camera.
   auto camera = make_lookat_camera(
       direction * box_size + box_center, box_center);
 
-  normals.resize(mesh.triangles.size());
-  auto vector_field = make_glvector_field(
-      normals, mesh.triangles, mesh.positions, 0.01);
+  auto vector_field = make_glvector_field(normals, mesh.positions, 0.01);
 
   // Draw.
-  while (!should_glwindow_close(win)) {
-    clear_glframebuffer(options.background);
+  while (!draw_loop(win)) {
+    clear_glframebuffer(vec4f(viewer.background, 1));
+    update_camera(camera.frame, camera.focus, win);
 
     bind_glprogram(shader);
     set_gluniform(shader, "frame", identity4x4f);
     set_gluniform(shader, "view", make_view_matrix(camera));
     set_gluniform(
-        shader, "projection", make_projection_matrix(camera, options.viewport));
+        shader, "projection", make_projection_matrix(camera, viewer.viewport));
     set_gluniform(shader, "color", vec3f{1, 0, 0});
     draw_glshape(shape);
     set_gluniform(shader, "color", vec3f{1, 1, 1});
     draw_glshape(vector_field);
-
-    swap_glbuffers(win);
-    update_camera(camera.frame, camera.focus, win);
-    process_glevents(win, true);
   }
 
   delete_glwindow(win);

@@ -22,8 +22,9 @@ namespace opengl {
 using namespace yocto;
 
 void check_glerror() {
-  assert(glGetError() == GL_NO_ERROR);
-  if (glGetError() != GL_NO_ERROR) printf("gl error\n");
+  auto error = glGetError();
+    if (error != GL_NO_ERROR) printf("gl error: %d (%x)\n", error, error);
+  assert(error == GL_NO_ERROR);
 }
 
 void clear_glframebuffer(const vec4f& color, bool clear_depth) {
@@ -1262,6 +1263,16 @@ opengl_shape make_glquad() {
   add_vertex_attribute(
       shape, vector<vec2f>{{-1, -1}, {1, -1}, {-1, 1}, {1, 1}});
   shape.type = opengl_shape::type::triangles;
+  return shape;
+}
+
+opengl_shape make_glmesh(const vector<vec3i>& triangles,
+    const vector<vec3f>& positions, const vector<vec3f>& normals) {
+  auto shape = opengl_shape{};
+  init_glshape(shape);
+  add_vertex_attribute(shape, positions);
+  add_vertex_attribute(shape, normals);
+  init_elements(shape, triangles);
   return shape;
 }
 
