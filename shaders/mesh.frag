@@ -10,5 +10,5 @@ uniform mat4 projection;
 void main() {
     vec3 color = vec3(normal.y);
     color = color * 0.5 + vec3(0.5);
-    result = vec4(vec3(1), 1);
+    result = vec4(color, 1);
 }

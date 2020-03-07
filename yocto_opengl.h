@@ -81,18 +81,9 @@ struct opengl_drawable {
 template <typename Type>
 struct opengl_uniform {
   const char* name;
-  Type&       value;
+  Type        value;
+    opengl_uniform(const char* n, const Type& v): name(n), value(v){}
 };
-
-// template <typename Func, typename... Args>
-// inline auto run_async(Func&& func,  {
-//   return std::async(std::launch::async, std::forward<Func>(func),
-//       std::forward<Args>(args)...);
- template <typename Func, typename... Args>
-void draw(const opengl_drawable& xxx, opengl_uniform<Args>... args) {
-    
-    
-}
 
 // OpenGL image data
 struct opengl_image {
@@ -423,6 +414,26 @@ opengl_camera make_lookat_camera(
 mat4f make_view_matrix(const opengl_camera& camera);
 mat4f make_projection_matrix(const opengl_camera& camera, const vec2i& viewport,
     float near = 0.01, float far = 10000);
+
+template <typename Type>
+void set_gluniform(const opengl_program& program, opengl_uniform<Type> u) {
+  set_gluniform(program, u.name, u.value);
+}
+
+template <typename Type, typename... Args>
+void set_gluniform(const opengl_program& program, opengl_uniform<Type> u,
+    opengl_uniform<Args>... args) {
+  set_gluniform(program, u.name, u.value);
+  set_gluniform(program, args...);
+}
+
+template <typename... Args>
+void draw_glshape_cool(const opengl_shape& shape, const opengl_program& program,
+    opengl_uniform<Args>... args) {
+  bind_glprogram(program);
+  set_gluniform(program, args...);
+  draw_glshape(shape);
+}
 
 }  // namespace opengl
 

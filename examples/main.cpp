@@ -14,6 +14,6 @@ int main(int num_args, const char* args[]) {
 
   viewer.viewport = {500, 500};
   // viewer.vertex_filename   = "shaders/test.vert";
-  viewer.fragment_filename = "shaders/test.frag";
+  // viewer.fragment_filename = "shaders/test.frag";
   run(viewer, mesh);
 }

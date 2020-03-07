@@ -60,16 +60,17 @@ inline void run(const mesh_viewer& viewer, const ioshape& mesh) {
   while (!draw_loop(win)) {
     clear_glframebuffer(vec4f(viewer.background, 1));
     update_camera(camera.frame, camera.focus, win);
+    auto view       = make_view_matrix(camera);
+    auto projection = make_projection_matrix(camera, viewer.viewport);
 
-    bind_glprogram(shader);
-    set_gluniform(shader, "frame", identity4x4f);
-    set_gluniform(shader, "view", make_view_matrix(camera));
-    set_gluniform(
-        shader, "projection", make_projection_matrix(camera, viewer.viewport));
-    set_gluniform(shader, "color", vec3f{1, 0, 0});
-    draw_glshape(shape);
-    set_gluniform(shader, "color", vec3f{1, 1, 1});
-    draw_glshape(vector_field);
+    // clang-format off
+    draw_glshape_cool(shape, shader,
+      opengl_uniform{"color", vec3f{1, 0, 0}},
+      opengl_uniform{"frame", identity4x4f},
+      opengl_uniform{"view", view},
+      opengl_uniform{"projection", projection}
+    );
+    // clang-format on
   }
 
   delete_glwindow(win);
