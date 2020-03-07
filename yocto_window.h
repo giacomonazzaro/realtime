@@ -114,29 +114,32 @@ struct opengl_input {
 struct opengl_window;
 
 struct opengl_callbacks {
-  // Callback called when the contents of a window is damaged and needs to be
-  // refreshed
-  function<void(opengl_window*, const opengl_input&)> refresh;
+  // Called after opengl is initialized
+  function<void(opengl_window&, const opengl_input&)> init;
 
-  // Draw callback for drawing widgets
-  function<void(opengl_window*, const opengl_input&)> widgets;
+  // Called at each frame
+  function<void(opengl_window&, const opengl_input&)> draw;
 
-  // Drop callback that returns that list of dropped strings.
-  function<void(opengl_window*, const vector<string>&, const opengl_input&)>
+  // Called when the contents of a window is damaged and needs to be refreshed
+  function<void(opengl_window&, const opengl_input&)> refresh;
+
+  // Called after draw for widgets
+  function<void(opengl_window&, const opengl_input&)> widgets;
+
+  // Called when drag and dropping files onto window.
+  function<void(opengl_window&, const opengl_input&, const vector<string>&)>
       drop;
 
-  // Key callback that returns ASCII key, pressed/released flag and modifier
-  // keys
-  function<void(opengl_window*, int key, bool pressed, const opengl_input&)>
+  // Called when a key is pressed or release.
+  function<void(opengl_window&, const opengl_input&, int key, bool pressed)>
       key;
 
-  // Mouse click callback that returns left/right button, pressed/released flag,
-  // modifier keys
-  function<void(opengl_window*, bool left, bool pressed, const opengl_input&)>
+  // Called when a mouse button is pressed or release.
+  function<void(opengl_window&, const opengl_input&, bool left, bool pressed)>
       click;
 
-  // Scroll callback that returns scroll amount
-  function<void(opengl_window*, float amount, const opengl_input&)> scroll;
+  // Called when scroll is preformed.
+  function<void(opengl_window&, const opengl_input&, float amount)> scroll;
 };
 
 // OpenGL window wrapper
@@ -148,6 +151,17 @@ struct opengl_window {
   bool             widgets_left  = true;
   opengl_input     input         = {};
   vec4f            background    = {0.15f, 0.15f, 0.15f, 1.0f};
+
+  // clang-format off
+  void init() { callbacks.init(*this, input); }
+  void draw() { callbacks.draw(*this, input); }
+  void refresh() { callbacks.refresh(*this, input); }
+  void widgets() { callbacks.widgets(*this, input); }
+  void drop(const vector<string>& names) { callbacks.drop(*this, input, names); }
+  void key(int key, bool pressed) { callbacks.key(*this, input, key, pressed); }
+  void click(bool left, bool pressed) { callbacks.click(*this,  input, left, pressed); }
+  void scroll(float amount) { callbacks.scroll(*this, input, amount); }
+  // clang-format on
 };
 
 void init_glwindow(opengl_window& win, const vec2i& size, const string& title);

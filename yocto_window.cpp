@@ -95,38 +95,47 @@ void init_glwindow(opengl_window& win, const vec2i& size, const string& title) {
   glfwSetWindowUserPointer(win.win, &win);
 
   // set callbacks
-  glfwSetWindowRefreshCallback(win.win, [](GLFWwindow* glfw) {
-    auto win = (opengl_window*)glfwGetWindowUserPointer(glfw);
-    win->callbacks.refresh(win, win->input);
-  });
-  glfwSetDropCallback(
-      win.win, [](GLFWwindow* glfw, int num, const char** paths) {
-        auto win = (opengl_window*)glfwGetWindowUserPointer(glfw);
-        if (win->callbacks.drop) {
+  if (win.callbacks.refresh) {
+    glfwSetWindowRefreshCallback(win.win, [](GLFWwindow* glfw) {
+      auto win = (opengl_window*)glfwGetWindowUserPointer(glfw);
+      win->refresh();
+    });
+  }
+
+  if (win.callbacks.drop) {
+    glfwSetDropCallback(
+        win.win, [](GLFWwindow* glfw, int num, const char** paths) {
+          auto win   = (opengl_window*)glfwGetWindowUserPointer(glfw);
           auto pathv = vector<string>();
           for (auto i = 0; i < num; i++) pathv.push_back(paths[i]);
-          win->callbacks.drop(win, pathv, win->input);
-        }
-      });
-  glfwSetKeyCallback(win.win,
-      [](GLFWwindow* glfw, int key, int scancode, int action, int mods) {
-        auto win = (opengl_window*)glfwGetWindowUserPointer(glfw);
-        if (win->callbacks.key)
-          win->callbacks.key(win, key, (bool)action, win->input);
-      });
-  glfwSetMouseButtonCallback(
-      win.win, [](GLFWwindow* glfw, int button, int action, int mods) {
-        auto win = (opengl_window*)glfwGetWindowUserPointer(glfw);
-        if (win->callbacks.click)
-          win->callbacks.click(
-              win, button == GLFW_MOUSE_BUTTON_LEFT, (bool)action, win->input);
-      });
-  glfwSetScrollCallback(
-      win.win, [](GLFWwindow* glfw, double xoffset, double yoffset) {
-        auto win = (opengl_window*)glfwGetWindowUserPointer(glfw);
-        if (win->callbacks.scroll)
-          win->callbacks.scroll(win, (float)yoffset, win->input);
-      });
+          win->drop(pathv);
+        });
+  }
+
+  if (win.callbacks.key) {
+    glfwSetKeyCallback(win.win,
+        [](GLFWwindow* glfw, int key, int scancode, int action, int mods) {
+          auto win = (opengl_window*)glfwGetWindowUserPointer(glfw);
+          win->key(key, (bool)action);
+        });
+  }
+
+  if (win.callbacks.click) {
+    glfwSetMouseButtonCallback(
+        win.win, [](GLFWwindow* glfw, int button, int action, int mods) {
+          auto win = (opengl_window*)glfwGetWindowUserPointer(glfw);
+          win->click(button == GLFW_MOUSE_BUTTON_LEFT, (bool)action);
+        });
+  }
+
+  if (win.callbacks.scroll) {
+    glfwSetScrollCallback(
+        win.win, [](GLFWwindow* glfw, double xoffset, double yoffset) {
+          auto win = (opengl_window*)glfwGetWindowUserPointer(glfw);
+          win->scroll((float)yoffset);
+        });
+  }
+
   glfwSetWindowSizeCallback(
       win.win, [](GLFWwindow* glfw, int width, int height) {
         auto win = (opengl_window*)glfwGetWindowUserPointer(glfw);
@@ -166,6 +175,9 @@ void init_glwindow(opengl_window& win, const vec2i& size, const string& title) {
 #endif
     ImGui::StyleColorsDark();
   }
+
+  // call init callback
+  if (win.callbacks.init) win.init();
 }
 
 void delete_glwindow(opengl_window& win) {

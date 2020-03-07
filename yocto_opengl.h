@@ -17,6 +17,8 @@
 namespace opengl {
 using namespace yocto;
 
+bool init_opengl();
+
 // OpenGL program
 struct opengl_program {
   string vertex_code;

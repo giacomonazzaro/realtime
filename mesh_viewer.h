@@ -29,9 +29,9 @@ struct mesh_viewer {
 
 inline void run(const mesh_viewer& viewer, const ioshape& mesh) {
   // Init window.
-  auto win = opengl_window();
-  init_glwindow(win, viewer.viewport, "mesh viewer");
+  auto win      = opengl_window();
   win.callbacks = viewer.callbacks;
+  init_glwindow(win, viewer.viewport, "mesh viewer");
 
   // Init shape.
   auto normals = mesh.normals.empty()
@@ -56,10 +56,7 @@ inline void run(const mesh_viewer& viewer, const ioshape& mesh) {
 
   auto vector_field = make_glvector_field(normals, mesh.positions, 0.01);
 
-  // Draw.
-  while (!draw_loop(win)) {
-    clear_glframebuffer(vec4f(viewer.background, 1));
-    update_camera(camera.frame, camera.focus, win);
+  win.callbacks.draw = [&](opengl_window& win, const opengl_input&) {
     auto view       = make_view_matrix(camera);
     auto projection = make_projection_matrix(camera, viewer.viewport);
 
@@ -70,7 +67,18 @@ inline void run(const mesh_viewer& viewer, const ioshape& mesh) {
       opengl_uniform{"view", view},
       opengl_uniform{"projection", projection}
     );
+
+    draw_glshape_cool(vector_field, shader,
+      opengl_uniform{"color", vec3f{0, 1, 0}}
+    );
     // clang-format on
+  };
+
+  // Draw.
+  while (!draw_loop(win)) {
+    clear_glframebuffer(vec4f(viewer.background, 1));
+    update_camera(camera.frame, camera.focus, win);
+    win.draw();
   }
 
   delete_glwindow(win);

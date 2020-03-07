@@ -21,9 +21,16 @@
 namespace opengl {
 using namespace yocto;
 
+bool init_opengl() {
+  // init gl extensions
+  if (!gladLoadGL())
+    throw std::runtime_error("cannot initialize OpenGL extensions");
+  return true;
+}
+
 void check_glerror() {
   auto error = glGetError();
-    if (error != GL_NO_ERROR) printf("gl error: %d (%x)\n", error, error);
+  if (error != GL_NO_ERROR) printf("gl error: %d (%x)\n", error, error);
   assert(error == GL_NO_ERROR);
 }
 
