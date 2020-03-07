@@ -1264,6 +1264,26 @@ void init_glshape(opengl_shape& shape) {
   init_opengl_vertex_array_object(shape.vao);
 }
 
+opengl_shape make_glpoints(const vector<vec3f>& positions) {
+  auto shape = opengl_shape{};
+  init_glshape(shape);
+  add_vertex_attribute(shape, positions);
+  shape.type = opengl_shape::type::points;
+  return shape;
+}
+
+opengl_shape make_glpolyline(
+    const vector<vec3f>& positions, const vector<vec3f>& normals, float eps) {
+  auto shape = opengl_shape{};
+  init_glshape(shape);
+  add_vertex_attribute(shape, positions);
+  if (normals.size()) {
+    add_vertex_attribute(shape, normals);
+  }
+  shape.type = opengl_shape::type::lines;
+  return shape;
+}
+
 opengl_shape make_glquad() {
   auto shape = opengl_shape{};
   init_glshape(shape);
@@ -1280,18 +1300,6 @@ opengl_shape make_glmesh(const vector<vec3i>& triangles,
   add_vertex_attribute(shape, positions);
   add_vertex_attribute(shape, normals);
   init_elements(shape, triangles);
-  return shape;
-}
-
-opengl_shape make_glpath(
-    const vector<vec3f>& positions, const vector<vec3f>& normals, float eps) {
-  auto shape = opengl_shape{};
-  init_glshape(shape);
-  add_vertex_attribute(shape, positions);
-  if (normals.size()) {
-    add_vertex_attribute(shape, normals);
-  }
-  shape.type = opengl_shape::type::lines;
   return shape;
 }
 

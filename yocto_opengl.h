@@ -399,11 +399,12 @@ void init_glshape(opengl_shape& shape);
 void draw_glshape(const opengl_shape& shape);
 void delete_glshape(opengl_shape& glshape);
 
+opengl_shape make_glpoints(const vector<vec3f>& positions);
+opengl_shape make_glpolyline(const vector<vec3f>& position,
+    const vector<vec3f>& normals = {}, float eps = 0.01);
 opengl_shape make_glquad(opengl_shape& shape);
 opengl_shape make_glmesh(const vector<vec3i>& triangles,
     const vector<vec3f>& positions, const vector<vec3f>& normals);
-opengl_shape make_glpath(const vector<vec3f>& position,
-    const vector<vec3f>& normals = {}, float eps = 0.01);
 opengl_shape make_glvector_field(const vector<vec3f>& vector_field,
     const vector<vec3f>& from, float scale = 0.01);
 opengl_shape make_glvector_field(const vector<vec3f>& vector_field,

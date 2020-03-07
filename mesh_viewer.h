@@ -54,22 +54,16 @@ inline void run(const mesh_viewer& viewer, const ioshape& mesh) {
   auto camera = make_lookat_camera(
       direction * box_size + box_center, box_center);
 
-  auto vector_field = make_glvector_field(normals, mesh.positions, 0.01);
-
   win.callbacks.draw = [&](opengl_window& win, const opengl_input&) {
     auto view       = make_view_matrix(camera);
     auto projection = make_projection_matrix(camera, viewer.viewport);
 
     // clang-format off
     draw_glshape_cool(shape, shader,
-      opengl_uniform{"color", vec3f{1, 0, 0}},
+      opengl_uniform{"color", vec3f{1, 1, 1}},
       opengl_uniform{"frame", identity4x4f},
       opengl_uniform{"view", view},
       opengl_uniform{"projection", projection}
-    );
-
-    draw_glshape_cool(vector_field, shader,
-      opengl_uniform{"color", vec3f{0, 1, 0}}
     );
     // clang-format on
   };
