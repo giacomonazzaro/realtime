@@ -2,6 +2,7 @@
 #define YOCTO_WINDOW
 
 #include <functional>
+using std::function;
 
 #include "yocto_common.h"
 #include "yocto_math.h"
@@ -112,57 +113,45 @@ struct opengl_input {
 
 struct opengl_window;
 
-// Draw callback called every frame and when resizing
-using draw_glcallback =
-    std::function<void(opengl_window*, const opengl_input& input)>;
-// Draw callback for drawing widgets
-using widgets_glcallback =
-    std::function<void(opengl_window*, const opengl_input& input)>;
-// Drop callback that returns that list of dropped strings.
-using drop_glcallback = std::function<void(
-    opengl_window*, const vector<string>&, const opengl_input& input)>;
-// Key callback that returns ASCII key, pressed/released flag and modifier keys
-using key_glcallback = std::function<void(
-    opengl_window*, int key, bool pressed, const opengl_input& input)>;
-// Mouse click callback that returns left/right button, pressed/released flag,
-// modifier keys
-using click_glcallback = std::function<void(
-    opengl_window*, bool left, bool pressed, const opengl_input& input)>;
-// Scroll callback that returns scroll amount
-using scroll_glcallback = std::function<void(
-    opengl_window*, float amount, const opengl_input& input)>;
-// Update functions called every frame
-using uiupdate_glcallback =
-    std::function<void(opengl_window*, const opengl_input& input)>;
-// Update functions called every frame
-using update_glcallback =
-    std::function<void(opengl_window*, const opengl_input& input)>;
+struct opengl_callbacks {
+  // Callback called when the contents of a window is damaged and needs to be
+  // refreshed
+  function<void(opengl_window*, const opengl_input&)> refresh;
+
+  // Draw callback for drawing widgets
+  function<void(opengl_window*, const opengl_input&)> widgets;
+
+  // Drop callback that returns that list of dropped strings.
+  function<void(opengl_window*, const vector<string>&, const opengl_input&)>
+      drop;
+
+  // Key callback that returns ASCII key, pressed/released flag and modifier
+  // keys
+  function<void(opengl_window*, int key, bool pressed, const opengl_input&)>
+      key;
+
+  // Mouse click callback that returns left/right button, pressed/released flag,
+  // modifier keys
+  function<void(opengl_window*, bool left, bool pressed, const opengl_input&)>
+      click;
+
+  // Scroll callback that returns scroll amount
+  function<void(opengl_window*, float amount, const opengl_input&)> scroll;
+};
 
 // OpenGL window wrapper
 struct opengl_window {
-  GLFWwindow*         win           = nullptr;
-  string              title         = "";
-  draw_glcallback     draw_cb       = {};
-  widgets_glcallback  widgets_cb    = {};
-  drop_glcallback     drop_cb       = {};
-  key_glcallback      key_cb        = {};
-  click_glcallback    click_cb      = {};
-  scroll_glcallback   scroll_cb     = {};
-  update_glcallback   update_cb     = {};
-  uiupdate_glcallback uiupdate_cb   = {};
-  int                 widgets_width = 0;
-  bool                widgets_left  = true;
-  opengl_input        input         = {};
-  vec4f               background    = {0.15f, 0.15f, 0.15f, 1.0f};
+  GLFWwindow*      win           = nullptr;
+  string           title         = "";
+  opengl_callbacks callbacks     = {};
+  int              widgets_width = 0;
+  bool             widgets_left  = true;
+  opengl_input     input         = {};
+  vec4f            background    = {0.15f, 0.15f, 0.15f, 1.0f};
 };
 
 void init_glwindow(opengl_window& win, const vec2i& size, const string& title);
 void delete_glwindow(opengl_window& win);
-
-void set_drop_glcallback(opengl_window& win, drop_glcallback drop_cb);
-void set_key_glcallback(opengl_window& win, key_glcallback cb);
-void set_click_glcallback(opengl_window& win, click_glcallback cb);
-void set_scroll_glcallback(opengl_window& win, scroll_glcallback cb);
 
 void* get_gluser_pointer(const opengl_window& win);
 
@@ -183,12 +172,11 @@ bool get_glalt_key(const opengl_window& win);
 bool get_glshift_key(const opengl_window& win);
 bool is_key_pressed(const opengl_window& win, opengl_key key);
 
-void process_glevents(const opengl_window& win, bool wait = false);
+void process_glevents(opengl_window& win, bool wait = false);
 void swap_glbuffers(const opengl_window& win);
 bool draw_loop(const opengl_window& win, bool wait = false);
 
-void update_camera(frame3f& frame, float& focus, vec2f& mouse_pos,
-    vec2f& last_pos, const opengl_window& win);
+void update_camera(frame3f& frame, float& focus, const opengl_window& win);
 
 }  // namespace yocto
 

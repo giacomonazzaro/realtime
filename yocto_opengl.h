@@ -372,7 +372,14 @@ void init_glshape(opengl_shape& shape);
 void draw_glshape(const opengl_shape& shape);
 void delete_glshape(opengl_shape& glshape);
 
-void init_glquad(opengl_shape& shape);
+opengl_shape make_glquad(opengl_shape& shape);
+opengl_shape make_glpath(const vector<vec3f>& position,
+    const vector<vec3f>& normals = {}, float eps = 0.01);
+opengl_shape make_glvector_field(const vector<vec3f>& vector_field,
+    const vector<vec3f>& from, float scale = 0.01);
+opengl_shape make_glvector_field(const vector<vec3f>& vector_field,
+    const vector<vec3i>& triangles, const vector<vec3f>& positions,
+    float scale = 0.001);
 
 opengl_camera make_lookat_camera(
     const vec3f& from, const vec3f& to, const vec3f& up = {0, 1, 0});

@@ -20,29 +20,11 @@ vector<vec3f> compute_normals(
 }
 
 struct mesh_viewer_options {
-  vec2i  viewport          = {500, 500};
-  vec4f  background        = {0, 0, 0, 1};
-  string vertex_filename   = "shaders/mesh.vert";
-  string fragment_filename = "shaders/mesh.frag";
-
-  // Draw callback called every frame and when resizing
-  draw_glcallback draw_cb;
-  // Draw callback for drawing widgets
-  widgets_glcallback widgets_cb;
-  // Drop callback that returns that list of dropped strings.
-  drop_glcallback drop_cb;
-  // Key callback that returns ASCII key, pressed/released flag and modifier
-  // keys
-  key_glcallback key_cb;
-  // Mouse click callback that returns left/right button, pressed/released flag,
-  // modifier keys
-  click_glcallback click_cb;
-  // Scroll callback that returns scroll amount
-  scroll_glcallback scroll_cb;
-  // Update functions called every frame
-  uiupdate_glcallback uiupdate_cb;
-  // Update functions called every frame
-  update_glcallback update_cb;
+  vec2i            viewport          = {500, 500};
+  vec4f            background        = {0, 0, 0, 1};
+  string           vertex_filename   = "shaders/mesh.vert";
+  string           fragment_filename = "shaders/mesh.frag";
+  opengl_callbacks callbacks         = {};
 };
 
 inline void mesh_viewer(
@@ -50,13 +32,14 @@ inline void mesh_viewer(
   // Init window.
   auto win = opengl_window();
   init_glwindow(win, options.viewport, "mesh viewer");
+  win.callbacks = options.callbacks;
 
   // Init shape.
   auto shape = opengl_shape{};
   init_glshape(shape);
-  auto& normals = mesh.normals.empty()
-                      ? compute_normals(mesh.triangles, mesh.positions)
-                      : mesh.normals;
+  auto normals = mesh.normals.empty()
+                     ? compute_normals(mesh.triangles, mesh.positions)
+                     : mesh.normals;
   add_vertex_attribute(shape, mesh.positions);
   add_vertex_attribute(shape, normals);
   init_elements(shape, mesh.triangles);
@@ -69,26 +52,33 @@ inline void mesh_viewer(
   auto box_size   = max(size(box));
 
   // Init shader.
-  auto shader = create_glprogram("shaders/mesh.vert", "shaders/mesh.frag");
+  auto shader = create_glprogram(
+      options.vertex_filename, options.fragment_filename);
 
   // Init camera.
   auto camera = make_lookat_camera(
       direction * box_size + box_center, box_center);
 
+  normals.resize(mesh.triangles.size());
+  auto vector_field = make_glvector_field(
+      normals, mesh.triangles, mesh.positions, 0.01);
+
   // Draw.
-  vec2f mouse, last_mouse;
   while (!should_glwindow_close(win)) {
     clear_glframebuffer(options.background);
-    update_camera(camera.frame, camera.focus, mouse, last_mouse, win);
 
     bind_glprogram(shader);
     set_gluniform(shader, "frame", identity4x4f);
     set_gluniform(shader, "view", make_view_matrix(camera));
     set_gluniform(
         shader, "projection", make_projection_matrix(camera, options.viewport));
+    set_gluniform(shader, "color", vec3f{1, 0, 0});
     draw_glshape(shape);
+    set_gluniform(shader, "color", vec3f{1, 1, 1});
+    draw_glshape(vector_field);
 
     swap_glbuffers(win);
+    update_camera(camera.frame, camera.focus, win);
     process_glevents(win, true);
   }
 

@@ -6,9 +6,8 @@ in vec3 normal;
 uniform mat4 frame;
 uniform mat4 view;
 uniform mat4 projection;
+uniform vec3 color;
 
 void main() {
-    vec3 color = vec3(normal.y);
-    color = color * 0.5 + vec3(0.5);
-    result = vec4(vec3(1), 1);
+    result = vec4(color, 1);
 }

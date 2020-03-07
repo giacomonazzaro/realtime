@@ -23,14 +23,13 @@
 
 namespace yocto {
 
-void update_camera(frame3f& frame, float& focus, vec2f& mouse_pos,
-    vec2f& last_pos, const opengl_window& win) {
-  last_pos         = mouse_pos;
-  mouse_pos        = get_glmouse_pos(win);
-  auto mouse_left  = get_glmouse_left(win);
-  auto mouse_right = get_glmouse_right(win);
-  auto alt_down    = get_glalt_key(win);
-  auto shift_down  = get_glshift_key(win);
+void update_camera(frame3f& frame, float& focus, const opengl_window& win) {
+  auto last_pos    = win.input.mouse_last;
+  auto mouse_pos   = win.input.mouse_pos;
+  auto mouse_left  = win.input.mouse_left;
+  auto mouse_right = win.input.mouse_right;
+  auto alt_down    = win.input.modifier_alt;
+  auto shift_down  = win.input.modifier_shift;
 
   // handle mouse and keyboard for navigation
   if ((mouse_left || mouse_right) && !alt_down) {
@@ -98,33 +97,35 @@ void init_glwindow(opengl_window& win, const vec2i& size, const string& title) {
   // set callbacks
   glfwSetWindowRefreshCallback(win.win, [](GLFWwindow* glfw) {
     auto win = (opengl_window*)glfwGetWindowUserPointer(glfw);
-    win->draw_cb(win, win->input);
+    win->callbacks.refresh(win, win->input);
   });
   glfwSetDropCallback(
       win.win, [](GLFWwindow* glfw, int num, const char** paths) {
         auto win = (opengl_window*)glfwGetWindowUserPointer(glfw);
-        if (win->drop_cb) {
+        if (win->callbacks.drop) {
           auto pathv = vector<string>();
           for (auto i = 0; i < num; i++) pathv.push_back(paths[i]);
-          win->drop_cb(win, pathv, win->input);
+          win->callbacks.drop(win, pathv, win->input);
         }
       });
   glfwSetKeyCallback(win.win,
       [](GLFWwindow* glfw, int key, int scancode, int action, int mods) {
         auto win = (opengl_window*)glfwGetWindowUserPointer(glfw);
-        if (win->key_cb) win->key_cb(win, key, (bool)action, win->input);
+        if (win->callbacks.key)
+          win->callbacks.key(win, key, (bool)action, win->input);
       });
   glfwSetMouseButtonCallback(
       win.win, [](GLFWwindow* glfw, int button, int action, int mods) {
         auto win = (opengl_window*)glfwGetWindowUserPointer(glfw);
-        if (win->click_cb)
-          win->click_cb(
+        if (win->callbacks.click)
+          win->callbacks.click(
               win, button == GLFW_MOUSE_BUTTON_LEFT, (bool)action, win->input);
       });
   glfwSetScrollCallback(
       win.win, [](GLFWwindow* glfw, double xoffset, double yoffset) {
         auto win = (opengl_window*)glfwGetWindowUserPointer(glfw);
-        if (win->scroll_cb) win->scroll_cb(win, (float)yoffset, win->input);
+        if (win->callbacks.scroll)
+          win->callbacks.scroll(win, (float)yoffset, win->input);
       });
   glfwSetWindowSizeCallback(
       win.win, [](GLFWwindow* glfw, int width, int height) {
@@ -225,7 +226,7 @@ void set_glwindow_close(const opengl_window& win, bool close) {
   glfwSetWindowShouldClose(win.win, close ? GLFW_TRUE : GLFW_FALSE);
 }
 
-bool draw_loop(const opengl_window& win, bool wait) {
+bool draw_loop(opengl_window& win, bool wait) {
   glfwSwapBuffers(win.win);
   process_glevents(win, wait);
   return glfwWindowShouldClose(win.win);
@@ -270,7 +271,56 @@ bool get_glshift_key(const opengl_window& win) {
          glfwGetKey(win.win, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS;
 }
 
-void process_glevents(const opengl_window& win, bool wait) {
+void process_glevents(opengl_window& win, bool wait) {
+  // update input
+  win.input.mouse_last = win.input.mouse_pos;
+  auto mouse_posx = 0.0, mouse_posy = 0.0;
+  glfwGetCursorPos(win.win, &mouse_posx, &mouse_posy);
+  win.input.mouse_pos = vec2f{(float)mouse_posx, (float)mouse_posy};
+  if (win.widgets_width && win.widgets_left)
+    win.input.mouse_pos.x -= win.widgets_width;
+  win.input.mouse_left = glfwGetMouseButton(win.win, GLFW_MOUSE_BUTTON_LEFT) ==
+                         GLFW_PRESS;
+  win.input.mouse_right = glfwGetMouseButton(
+                              win.win, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS;
+  win.input.modifier_alt =
+      glfwGetKey(win.win, GLFW_KEY_LEFT_ALT) == GLFW_PRESS ||
+      glfwGetKey(win.win, GLFW_KEY_RIGHT_ALT) == GLFW_PRESS;
+  win.input.modifier_shift =
+      glfwGetKey(win.win, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ||
+      glfwGetKey(win.win, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS;
+  win.input.modifier_ctrl =
+      glfwGetKey(win.win, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS ||
+      glfwGetKey(win.win, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS;
+  glfwGetWindowSize(
+      win.win, &win.input.window_size.x, &win.input.window_size.y);
+  if (win.widgets_width) win.input.window_size.x -= win.widgets_width;
+  glfwGetFramebufferSize(win.win, &win.input.framebuffer_viewport.z,
+      &win.input.framebuffer_viewport.w);
+  win.input.framebuffer_viewport.x = 0;
+  win.input.framebuffer_viewport.y = 0;
+  if (win.widgets_width) {
+    auto win_size = zero2i;
+    glfwGetWindowSize(win.win, &win_size.x, &win_size.y);
+    auto offset = (int)(win.widgets_width *
+                        (float)win.input.framebuffer_viewport.z / win_size.x);
+    win.input.framebuffer_viewport.z -= offset;
+    if (win.widgets_left) win.input.framebuffer_viewport.x += offset;
+  }
+  if (win.widgets_width) {
+    auto io                  = &ImGui::GetIO();
+    win.input.widgets_active = io->WantTextInput || io->WantCaptureMouse ||
+                               io->WantCaptureKeyboard;
+  }
+
+  // time
+  win.input.clock_last = win.input.clock_now;
+  win.input.clock_now =
+      std::chrono::high_resolution_clock::now().time_since_epoch().count();
+  win.input.time_now   = (double)win.input.clock_now / 1000000000.0;
+  win.input.time_delta = (double)(win.input.clock_now - win.input.clock_last) /
+                         1000000000.0;
+
   if (wait)
     glfwWaitEvents();
   else

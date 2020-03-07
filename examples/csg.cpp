@@ -3,7 +3,7 @@
 #include <vector>
 using namespace std;
 
-#include "../apps.h"
+#include "../mesh_viewer.h"
 #include "../parser.h"
 using namespace yocto;
 using namespace opengl;

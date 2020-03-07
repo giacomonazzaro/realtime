@@ -1256,18 +1256,86 @@ void init_glshape(opengl_shape& shape) {
   init_opengl_vertex_array_object(shape.vao);
 }
 
-void init_glquad(opengl_shape& shape) {
+opengl_shape make_glquad() {
+  auto shape = opengl_shape{};
   init_glshape(shape);
   add_vertex_attribute(
       shape, vector<vec2f>{{-1, -1}, {1, -1}, {-1, 1}, {1, 1}});
   shape.type = opengl_shape::type::triangles;
+  return shape;
+}
+
+opengl_shape make_glpath(
+    const vector<vec3f>& positions, const vector<vec3f>& normals, float eps) {
+  auto shape = opengl_shape{};
+  init_glshape(shape);
+  add_vertex_attribute(shape, positions);
+  if (normals.size()) {
+    add_vertex_attribute(shape, normals);
+  }
+  shape.type = opengl_shape::type::lines;
+  return shape;
+}
+
+opengl_shape make_glvector_field(
+    const vector<vec3f>& vector_field, const vector<vec3f>& from, float scale) {
+  assert(vector_field.size() == from.size());
+  auto shape = opengl_shape{};
+  init_glshape(shape);
+  auto size      = vector_field.size();
+  auto positions = vector<vec3f>(size * 2);
+
+  for (int i = 0; i < size; i++) {
+    auto to              = from[i] + scale * vector_field[i];
+    positions[i * 2]     = from[i];
+    positions[i * 2 + 1] = to;
+  }
+  add_vertex_attribute(shape, positions);
+
+  auto elements = vector<vec2i>(size);
+  for (int i = 0; i < elements.size(); i++) {
+    elements[i] = {2 * i, 2 * i + 1};
+  }
+  init_elements(shape, elements);
+  return shape;
+}
+
+opengl_shape make_glvector_field(const vector<vec3f>& vector_field,
+    const vector<vec3i>& triangles, const vector<vec3f>& positions,
+    float scale) {
+  assert(vector_field.size() == triangles.size());
+  auto shape = opengl_shape{};
+  init_glshape(shape);
+  auto size = vector_field.size();
+  auto pos  = vector<vec3f>(size * 2);
+
+  for (int i = 0; i < triangles.size(); i++) {
+    auto x      = positions[triangles[i].x];
+    auto y      = positions[triangles[i].y];
+    auto z      = positions[triangles[i].z];
+    auto normal = triangle_normal(x, y, z);
+    normal *= scale;
+    auto center    = (x + y + z) / 3;
+    auto from      = center + 0.001 * normal;
+    auto to        = from + (scale * vector_field[i]) + 0.001 * normal;
+    pos[i * 2]     = from;
+    pos[i * 2 + 1] = to;
+  }
+  add_vertex_attribute(shape, positions);
+
+  auto elements = vector<vec2i>(size);
+  for (int i = 0; i < elements.size(); i++) {
+    elements[i] = {2 * i, 2 * i + 1};
+  }
+  init_elements(shape, elements);
+  return shape;
 }
 
 void draw_glshape(const opengl_shape& shape) {
   bind_opengl_vertex_array_object(shape.vao);
 
   // draw strip of points, lines or triangles
-  if (0 && !shape.elements) {
+  if (!shape.elements) {
     auto& positions = shape.vertex_attributes[0];
     if (shape.type == opengl_shape::type::points) {
       draw_glpoints(positions, positions.num);
