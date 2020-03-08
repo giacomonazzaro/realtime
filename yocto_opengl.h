@@ -402,7 +402,7 @@ void delete_glshape(opengl_shape& glshape);
 opengl_shape make_glpoints(const vector<vec3f>& positions);
 opengl_shape make_glpolyline(const vector<vec3f>& position,
     const vector<vec3f>& normals = {}, float eps = 0.01);
-opengl_shape make_glquad(opengl_shape& shape);
+opengl_shape make_glquad();
 opengl_shape make_glmesh(const vector<vec3i>& triangles,
     const vector<vec3f>& positions, const vector<vec3f>& normals);
 opengl_shape make_glvector_field(const vector<vec3f>& vector_field,
@@ -432,12 +432,23 @@ void set_gluniform(const opengl_program& program, const opengl_uniform<Type>& u,
 }
 
 template <typename... Args>
-void draw_glshape_cool(const opengl_shape& shape, const opengl_program& program,
+void draw_glshape(const opengl_shape& shape, const opengl_program& program,
     const opengl_uniform<Args>&... args) {
   bind_glprogram(program);
   set_gluniform(program, args...);
   draw_glshape(shape);
 }
+
+struct opengl_render_target {
+  opengl_texture texture;
+  uint           framebuffer;
+  uint           renderbuffer;
+};
+
+opengl_render_target make_glrender_target(
+    const vec2i& size, bool as_float, bool as_srgb, bool linear, bool mipmap);
+void bind_glrender_target(const opengl_render_target& target);
+void unbind_glrender_target();
 
 }  // namespace opengl
 

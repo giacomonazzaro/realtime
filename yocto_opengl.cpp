@@ -727,7 +727,7 @@ bool init_glprogram(opengl_program& program, const char* vertex,
   glGetProgramiv(program.program_id, GL_LINK_STATUS, &errflags);
   if (!errflags) {
     glGetShaderInfoLog(program.fragment_shader_id, 10000, 0, errbuf);
-    errbuf[6] = '\n';
+    //    errbuf[6] = '\n';
     printf("\n*** SHADER LINKING %s\n", errbuf);
     if (abort_on_error) {
       throw std::runtime_error("shader linking failed\n");
@@ -1415,5 +1415,50 @@ mat4f make_projection_matrix(
           : (2 * yocto::atan(camera.film / (2 * camera.lens)));
   return perspective_mat(camera_yfov, camera_aspect, near, far);
 }
+
+opengl_render_target make_glrender_target(
+    const vec2i& size, bool as_float, bool as_srgb, bool linear, bool mipmap) {
+  auto target = opengl_render_target{};
+  glGenFramebuffers(1, &target.framebuffer);
+  glBindFramebuffer(GL_FRAMEBUFFER, target.framebuffer);
+
+  // generate texture
+  // create a color attachment texture
+  auto& textureColorbuffer = target.texture.texture_id;
+  glGenTextures(1, &textureColorbuffer);
+  glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, size.x, size.y, 0, GL_RGB,
+      GL_UNSIGNED_BYTE, NULL);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+      textureColorbuffer, 0);
+  // create a renderbuffer object for depth and stencil attachment (we won't be
+  // sampling these)
+
+  // create render buffer for depth
+  glGenRenderbuffers(1, &target.renderbuffer);
+  glBindRenderbuffer(GL_RENDERBUFFER, target.renderbuffer);
+  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, size.x, size.y);
+  glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+  // bind frame buffer and render buffer
+  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT,
+      GL_RENDERBUFFER, target.renderbuffer);
+  assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+  // done
+  return target;
+}
+
+void bind_glrender_target(const opengl_render_target& target) {
+  glBindFramebuffer(GL_FRAMEBUFFER, target.framebuffer);
+  // if (target.depth_testing) {
+  //   glEnable(GL_DEPTH_TEST);
+  // }
+}
+
+void unbind_glrender_target() { glBindFramebuffer(GL_FRAMEBUFFER, 0); }
 
 }  // namespace opengl
