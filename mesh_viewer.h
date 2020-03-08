@@ -2,12 +2,6 @@
 #include "yocto_modelio.h"
 #include "yocto_opengl.h"
 #include "yocto_window.h"
-
-#ifdef __APPLE__
-#define GL_SILENCE_DEPRECATION
-#endif
-#include "ext/glad/glad.h"
-
 using namespace yocto;
 using namespace opengl;
 
@@ -78,8 +72,7 @@ inline void run(const mesh_viewer& viewer, const ioshape& mesh) {
 
     // clang-format off
     bind_glrender_target(target);
-    glClearColor(0.1f, 0.1f, 1.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    clear_glframebuffer(vec4f(viewer.background,1));
     draw_glshape(shape, shader,
       opengl_uniform{"color", vec3f{1, 1, 1}},
       opengl_uniform{"frame", identity4x4f},
@@ -89,6 +82,7 @@ inline void run(const mesh_viewer& viewer, const ioshape& mesh) {
     // clang-format on
 
     unbind_glrender_target();
+    clear_glframebuffer(vec4f(1, 1, 1, 1));
     bind_glprogram(quad_shader);
     set_gluniform_texture(quad_shader, "color_tex", target.texture, 0);
     set_gluniform(quad_shader, "color", vec3f{1, 1, 1});
@@ -97,7 +91,6 @@ inline void run(const mesh_viewer& viewer, const ioshape& mesh) {
 
   // Draw.
   do {
-    clear_glframebuffer(vec4f(viewer.background, 1));
     update_camera(camera.frame, camera.focus, win);
     win.draw();
   } while (!draw_loop(win));
