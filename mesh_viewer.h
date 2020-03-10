@@ -43,43 +43,43 @@ inline void run(const mesh_viewer& viewer, const ioshape& mesh) {
   // Init window.
   auto win      = Window();
   win.callbacks = std::move(viewer.callbacks);
-  init_glwindow(win, viewer.viewport, "mesh viewer");
+  init_window(win, viewer.viewport, "mesh viewer");
 
   // Init shape.
   auto normals = mesh.normals.empty()
                      ? compute_normals(mesh.triangles, mesh.positions)
                      : mesh.normals;
-  auto shape = make_glmesh(mesh.triangles, mesh.positions, normals);
+  auto shape = make_mesh(mesh.triangles, mesh.positions, normals);
 
   // Init camera.
   auto camera = make_framing_camera(mesh.positions);
 
   // Init shader.
-  auto shader = create_glprogram(
+  auto shader = create_program(
       viewer.vertex_filename, viewer.fragment_filename, true);
-  auto normal_shader = create_glprogram(
+  auto normal_shader = create_program(
       viewer.vertex_filename, "shaders/mesh_normals.frag", true);
 
-  auto quad        = make_glquad();
-  auto quad_shader = create_glprogram(
+  auto quad        = make_quad();
+  auto quad_shader = create_program(
       "shaders/quad.vert", "shaders/quad-texture.frag", true);
 
-  auto color_buffer = make_glrender_target(
+  auto color_buffer = make_render_target(
       2 * viewer.viewport, false, false, true, true);
-  auto color_normal = make_glrender_target(
+  auto color_normal = make_render_target(
       2 * viewer.viewport, false, false, true, true);
 
   // auto image  = load_image("/Users/nazzaro/Desktop/img.png");
-  // init_gltexture(target.texture, image, true, true, true);
+  // init_texture(target.texture, image, true, true, true);
 
   win.callbacks.draw = [&](Window& win, const Input&) {
     auto view       = make_view_matrix(camera);
     auto projection = make_projection_matrix(camera, viewer.viewport);
 
     // clang-format off
-    bind_glrender_target(color_buffer);
-    clear_glframebuffer(vec4f(viewer.background,1));
-    draw_glshape(shape, shader,
+    bind_render_target(color_buffer);
+    clear_framebuffer(vec4f(viewer.background,1));
+    draw_shape(shape, shader,
       Uniform{"color", vec3f{1, 1, 1}},
       Uniform{"frame", identity4x4f},
       Uniform{"view", view},
@@ -87,12 +87,12 @@ inline void run(const mesh_viewer& viewer, const ioshape& mesh) {
     );
     // clang-format on
 
-    unbind_glrender_target();
-    clear_glframebuffer(vec4f(1, 1, 1, 1));
-    bind_glprogram(quad_shader);
-    set_gluniform_texture(quad_shader, "color_tex", color_buffer.texture, 0);
-    set_gluniform(quad_shader, "color", vec3f{1, 1, 1});
-    draw_glshape(quad);
+    unbind_render_target();
+    clear_framebuffer(vec4f(1, 1, 1, 1));
+    bind_program(quad_shader);
+    set_uniform_texture(quad_shader, "color_tex", color_buffer.texture, 0);
+    set_uniform(quad_shader, "color", vec3f{1, 1, 1});
+    draw_shape(quad);
   };
 
   // Draw.
@@ -101,5 +101,5 @@ inline void run(const mesh_viewer& viewer, const ioshape& mesh) {
     win.draw();
   } while (!draw_loop(win));
 
-  delete_glwindow(win);
+  delete_window(win);
 }
