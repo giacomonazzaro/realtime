@@ -173,9 +173,6 @@ void init_window(Window& win, const vec2i& size, const string& title) {
     ImGui::StyleColorsDark();
   }
   update_window_size(win);
-
-  // call init callback
-  if (win.callbacks.init) win.init();
 }
 
 void delete_window(Window& win) {
@@ -195,12 +192,11 @@ void poll_events(const Window& win, bool wait) {
     glfwPollEvents();
 }
 
-void run_draw_loop(Window& win, bool wait) {
+void run_draw_loop(Window& win, std::function<void(Window&)> draw, bool wait) {
   while (!should_window_close(win)) {
     update_window_size(win);
     update_input(win.input, win);
-    win.draw();
-    win.gui();
+    draw(win);
     swap_buffers(win);
     poll_events(win, wait);
   }

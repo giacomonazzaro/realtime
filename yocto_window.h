@@ -113,15 +113,6 @@ struct Input {
 struct Window;
 
 struct Callbacks {
-  // Called after opengl is initialized
-  function<void(Window&)> init = [](Window&) {};
-
-  // Called at each frame
-  function<void(Window&)> draw = [](Window&) {};
-
-  // Called after draw for gui
-  function<void(Window&)> gui = [](Window&) {};
-
   // Called when the contents of a window is damaged and needs to be refreshed
   function<void(Window&)> refresh;
 
@@ -154,9 +145,6 @@ struct Window {
   int   widgets_width        = 0;
   bool  widgets_left         = true;
 
-  void init() { callbacks.init(*this); }
-  void draw() { callbacks.draw(*this); }
-  void gui() { callbacks.gui(*this); }
   void refresh() { callbacks.refresh(*this); }
   void drop(const vector<string>& names) { callbacks.drop(*this, names); }
   void key(Key key, bool pressed) { callbacks.key(*this, key, pressed); }
@@ -177,7 +165,8 @@ void update_input(Input& input, const Window& win);
 void update_input(Window& win);
 void poll_events(const Window& win, bool wait);
 void swap_buffers(const Window& win);
-void run_draw_loop(Window& win, bool wait = false);
+void run_draw_loop(
+    Window& win, std::function<void(Window&)> draw, bool wait = false);
 
 void update_camera(frame3f& frame, float& focus, const Window& win);
 
