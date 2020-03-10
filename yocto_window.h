@@ -168,14 +168,14 @@ void init_window(Window& win, const vec2i& size, const string& title);
 void delete_window(Window& win);
 
 bool should_window_close(const Window& win);
-void set_window_close(const Window& win, bool close = true);
 
 vec2f get_mouse_pos_normalized(const Window& win);
 bool  is_key_pressed(const Window& win, Key key);
 
-void process_events(Window& win, bool wait = false);
+void update_input(Window& win);
+void poll_events(const Window& win, bool wait);
 void swap_buffers(const Window& win);
-bool draw_loop(Window& win, bool wait = false);
+void run_draw_loop(Window& win, bool wait = false);
 
 void update_camera(frame3f& frame, float& focus, const Window& win);
 

@@ -39,6 +39,8 @@ inline Camera make_framing_camera(const vector<vec3f>& positions) {
   return make_lookat_camera(direction * box_size + box_center, box_center);
 }
 
+#define bind(n, v) Uniform(n, v)
+
 inline void run(const mesh_viewer& viewer, const ioshape& mesh) {
   // Init window.
   auto win      = Window();
@@ -73,33 +75,31 @@ inline void run(const mesh_viewer& viewer, const ioshape& mesh) {
   // init_texture(target.texture, image, true, true, true);
 
   win.callbacks.draw = [&](Window& win, const Input&) {
+    update_camera(camera.frame, camera.focus, win);
+
     auto view       = make_view_matrix(camera);
     auto projection = make_projection_matrix(camera, viewer.viewport);
 
     // clang-format off
     bind_render_target(color_buffer);
-    clear_framebuffer(vec4f(viewer.background,1));
+    clear_framebuffer(vec4f(viewer.background, 1));
     draw_shape(shape, shader,
-      Uniform{"color", vec3f{1, 1, 1}},
-      Uniform{"frame", identity4x4f},
-      Uniform{"view", view},
-      Uniform{"projection", projection}
+      bind("color", vec3f(1, 1, 1)),
+      bind("frame", identity4x4f),
+      bind("view", view),
+      bind("projection", projection)
     );
+    unbind_render_target();
     // clang-format on
 
-    unbind_render_target();
     clear_framebuffer(vec4f(1, 1, 1, 1));
     bind_program(quad_shader);
     set_uniform_texture(quad_shader, "color_tex", color_buffer.texture, 0);
-    set_uniform(quad_shader, "color", vec3f{1, 1, 1});
-    draw_shape(quad);
+    draw_shape(quad, quad_shader, Uniform{"color", vec3f{1, 1, 1}});
   };
 
   // Draw.
-  do {
-    update_camera(camera.frame, camera.focus, win);
-    win.draw();
-  } while (!draw_loop(win));
+  run_draw_loop(win);
 
   delete_window(win);
 }

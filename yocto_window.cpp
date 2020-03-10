@@ -186,71 +186,32 @@ void delete_window(Window& win) {
   win.glfw = nullptr;
 }
 
-// void* get_user_pointer(const Window& win) { return win.user_ptr; }
-
-// void set_drop_callback(Window& win, drop_callback drop_cb) {
-//  win.drop_cb = drop_cb;
-//  glfwSetDropCallback(win.glfw, _fw_drop_callback);
-//}
-//
-// void set_key_callback(Window& win, key_callback cb) {
-//  win.key_cb = cb;
-//  glfwSetKeyCallback(win.glfw, _fw_key_callback);
-//}
-//
-// void set_click_callback(Window& win, click_callback cb) {
-//  win.click_cb = cb;
-//  glfwSetMouseButtonCallback(win.glfw, _fw_click_callback);
-//}
-//
-// void set_scroll_callback(Window& win, scroll_callback cb) {
-//  win.scroll_cb = cb;
-//  glfwSetScrollCallback(win.glfw, _fw_scroll_callback);
-//}
-
-// vec2i get_framebuffer_size(const Window& win) {
-//   auto size = zero2i;
-//   glfwGetFramebufferSize(win.glfw, &size.x, &size.y);
-//   return size;
-// }
-
-// vec4i get_framebuffer_viewport(const Window& win) {
-//   auto viewport = zero4i;
-//   glfwGetFramebufferSize(win.glfw, &viewport.z, &viewport.w);
-//   return viewport;
-// }
-
-// vec2i get_window_size(const Window& win) {
-//   auto size = zero2i;
-//   glfwGetWindowSize(win.glfw, &size.x, &size.y);
-//   return size;
-// }
-
-// float get_framebuffer_aspect_ratio(const Window& win) {
-//   auto size = get_framebuffer_size(win);
-//   return (float)size.x / (float)size.y;
-// }
-
 bool should_window_close(const Window& win) {
   return glfwWindowShouldClose(win.glfw);
 }
-void set_window_close(const Window& win, bool close) {
-  glfwSetWindowShouldClose(win.glfw, close ? GLFW_TRUE : GLFW_FALSE);
+
+void poll_events(const Window& win, bool wait) {
+  if (wait)
+    glfwWaitEvents();
+  else
+    glfwPollEvents();
 }
 
-bool draw_loop(Window& win, bool wait) {
-  glfwSwapBuffers(win.glfw);
-  process_events(win, wait);
-  if (glfwWindowShouldClose(win.glfw)) return true;
-  return false;
+void run_draw_loop(Window& win, bool wait) {
+  while (!should_window_close(win)) {
+    update_input(win);
+    if (win.callbacks.draw) win.callbacks.draw(win, win.input);
+    if (win.callbacks.widgets) win.callbacks.widgets(win, win.input);
+    swap_buffers(win);
+    poll_events(win, wait);
+  }
 }
 
 vec2f get_mouse_pos_normalized(const Window& win) {
   auto& pos    = win.input.mouse_pos;
   auto  size   = win.input.window_size;
   auto  result = vec2f{2 * (pos.x / size.x) - 1, 1 - 2 * (pos.y / size.y)};
-  float aspect = float(size.x) / size.y;
-  result.x *= aspect;
+  result.x *= win.input.window_aspect;
   return result;
 }
 
@@ -258,37 +219,36 @@ bool is_key_pressed(const Window& win, Key key) {
   return glfwGetKey(win.glfw, (int)key) == GLFW_PRESS;
 }
 
-void process_events(Window& win, bool wait) {
+void update_input(Window& win) {
   // update input
   win.input.mouse_last = win.input.mouse_pos;
-  auto mouse_posx = 0.0, mouse_posy = 0.0;
-  glfwGetCursorPos(win.glfw, &mouse_posx, &mouse_posy);
+  auto  mouse_posx = 0.0, mouse_posy = 0.0;
+  auto& glfw = win.glfw;
+  glfwGetCursorPos(glfw, &mouse_posx, &mouse_posy);
   win.input.mouse_pos = vec2f{(float)mouse_posx, (float)mouse_posy};
   if (win.widgets_width && win.widgets_left)
     win.input.mouse_pos.x -= win.widgets_width;
-  win.input.mouse_left = glfwGetMouseButton(win.glfw, GLFW_MOUSE_BUTTON_LEFT) ==
+  win.input.mouse_left = glfwGetMouseButton(glfw, GLFW_MOUSE_BUTTON_LEFT) ==
                          GLFW_PRESS;
-  win.input.mouse_right = glfwGetMouseButton(
-                              win.glfw, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS;
-  win.input.modifier_alt =
-      glfwGetKey(win.glfw, GLFW_KEY_LEFT_ALT) == GLFW_PRESS ||
-      glfwGetKey(win.glfw, GLFW_KEY_RIGHT_ALT) == GLFW_PRESS;
+  win.input.mouse_right = glfwGetMouseButton(glfw, GLFW_MOUSE_BUTTON_RIGHT) ==
+                          GLFW_PRESS;
+  win.input.modifier_alt = glfwGetKey(glfw, GLFW_KEY_LEFT_ALT) == GLFW_PRESS ||
+                           glfwGetKey(glfw, GLFW_KEY_RIGHT_ALT) == GLFW_PRESS;
   win.input.modifier_shift =
-      glfwGetKey(win.glfw, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ||
-      glfwGetKey(win.glfw, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS;
+      glfwGetKey(glfw, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ||
+      glfwGetKey(glfw, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS;
   win.input.modifier_ctrl =
-      glfwGetKey(win.glfw, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS ||
-      glfwGetKey(win.glfw, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS;
-  glfwGetWindowSize(
-      win.glfw, &win.input.window_size.x, &win.input.window_size.y);
+      glfwGetKey(glfw, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS ||
+      glfwGetKey(glfw, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS;
+  glfwGetWindowSize(glfw, &win.input.window_size.x, &win.input.window_size.y);
   if (win.widgets_width) win.input.window_size.x -= win.widgets_width;
-  glfwGetFramebufferSize(win.glfw, &win.input.framebuffer_viewport.z,
+  glfwGetFramebufferSize(glfw, &win.input.framebuffer_viewport.z,
       &win.input.framebuffer_viewport.w);
   win.input.framebuffer_viewport.x = 0;
   win.input.framebuffer_viewport.y = 0;
   if (win.widgets_width) {
     auto win_size = zero2i;
-    glfwGetWindowSize(win.glfw, &win_size.x, &win_size.y);
+    glfwGetWindowSize(glfw, &win_size.x, &win_size.y);
     auto offset = (int)(win.widgets_width *
                         (float)win.input.framebuffer_viewport.z / win_size.x);
     win.input.framebuffer_viewport.z -= offset;
@@ -310,14 +270,9 @@ void process_events(Window& win, bool wait) {
   win.input.clock_last = win.input.clock_now;
   win.input.clock_now =
       std::chrono::high_resolution_clock::now().time_since_epoch().count();
-  win.input.time_now   = (double)win.input.clock_now / 1000000000.0;
+  win.input.time_now   = (double)win.input.clock_now / 1e9;
   win.input.time_delta = (double)(win.input.clock_now - win.input.clock_last) /
-                         1000000000.0;
-
-  if (wait)
-    glfwWaitEvents();
-  else
-    glfwPollEvents();
+                         1e9;
 }
 
 void swap_buffers(const Window& win) { glfwSwapBuffers(win.glfw); }
