@@ -85,18 +85,18 @@ void init_window(Window& win, const vec2i& size, const string& title) {
 #endif
 
   // create window
-  win     = Window{};
-  win.win = glfwCreateWindow(size.x, size.y, title.c_str(), nullptr, nullptr);
-  if (!win.win) throw std::runtime_error("cannot initialize windowing system");
-  glfwMakeContextCurrent(win.win);
+  win      = Window{};
+  win.glfw = glfwCreateWindow(size.x, size.y, title.c_str(), nullptr, nullptr);
+  if (!win.glfw) throw std::runtime_error("cannot initialize windowing system");
+  glfwMakeContextCurrent(win.glfw);
   glfwSwapInterval(1);  // Enable vsync
 
   // set user data
-  glfwSetWindowUserPointer(win.win, &win);
+  glfwSetWindowUserPointer(win.glfw, &win);
 
   // set callbacks
   if (win.callbacks.refresh) {
-    glfwSetWindowRefreshCallback(win.win, [](GLFWwindow* glfw) {
+    glfwSetWindowRefreshCallback(win.glfw, [](GLFWwindow* glfw) {
       auto win = (Window*)glfwGetWindowUserPointer(glfw);
       win->refresh();
     });
@@ -104,7 +104,7 @@ void init_window(Window& win, const vec2i& size, const string& title) {
 
   if (win.callbacks.drop) {
     glfwSetDropCallback(
-        win.win, [](GLFWwindow* glfw, int num, const char** paths) {
+        win.glfw, [](GLFWwindow* glfw, int num, const char** paths) {
           auto win   = (Window*)glfwGetWindowUserPointer(glfw);
           auto pathv = vector<string>();
           for (auto i = 0; i < num; i++) pathv.push_back(paths[i]);
@@ -113,7 +113,7 @@ void init_window(Window& win, const vec2i& size, const string& title) {
   }
 
   if (win.callbacks.key) {
-    glfwSetKeyCallback(win.win,
+    glfwSetKeyCallback(win.glfw,
         [](GLFWwindow* glfw, int key, int scancode, int action, int mods) {
           auto win = (Window*)glfwGetWindowUserPointer(glfw);
           win->key(key, (bool)action);
@@ -122,7 +122,7 @@ void init_window(Window& win, const vec2i& size, const string& title) {
 
   if (win.callbacks.click) {
     glfwSetMouseButtonCallback(
-        win.win, [](GLFWwindow* glfw, int button, int action, int mods) {
+        win.glfw, [](GLFWwindow* glfw, int button, int action, int mods) {
           auto win = (Window*)glfwGetWindowUserPointer(glfw);
           win->click(button == GLFW_MOUSE_BUTTON_LEFT, (bool)action);
         });
@@ -130,25 +130,25 @@ void init_window(Window& win, const vec2i& size, const string& title) {
 
   if (win.callbacks.scroll) {
     glfwSetScrollCallback(
-        win.win, [](GLFWwindow* glfw, double xoffset, double yoffset) {
+        win.glfw, [](GLFWwindow* glfw, double xoffset, double yoffset) {
           auto win = (Window*)glfwGetWindowUserPointer(glfw);
           win->scroll((float)yoffset);
         });
   }
 
   glfwSetWindowSizeCallback(
-      win.win, [](GLFWwindow* glfw, int width, int height) {
+      win.glfw, [](GLFWwindow* glfw, int width, int height) {
         auto win = (Window*)glfwGetWindowUserPointer(glfw);
         glfwGetWindowSize(
-            win->win, &win->input.window_size.x, &win->input.window_size.y);
+            win->glfw, &win->input.window_size.x, &win->input.window_size.y);
         if (win->widgets_width) win->input.window_size.x -= win->widgets_width;
-        glfwGetFramebufferSize(win->win, &win->input.framebuffer_viewport.z,
+        glfwGetFramebufferSize(win->glfw, &win->input.framebuffer_viewport.z,
             &win->input.framebuffer_viewport.w);
         win->input.framebuffer_viewport.x = 0;
         win->input.framebuffer_viewport.y = 0;
         if (win->widgets_width) {
           auto win_size = zero2i;
-          glfwGetWindowSize(win->win, &win_size.x, &win_size.y);
+          glfwGetWindowSize(win->glfw, &win_size.x, &win_size.y);
           auto offset = (int)(win->widgets_width *
                               (float)win->input.framebuffer_viewport.z /
                               win_size.x);
@@ -167,7 +167,7 @@ void init_window(Window& win, const vec2i& size, const string& title) {
     ImGui::CreateContext();
     ImGui::GetIO().IniFilename       = nullptr;
     ImGui::GetStyle().WindowRounding = 0;
-    ImGui_ImplGlfw_InitForOpenGL(win.win, true);
+    ImGui_ImplGlfw_InitForOpenGL(win.glfw, true);
 #ifndef __APPLE__
     ImGui_ImplOpenGL3_Init();
 #else
@@ -181,48 +181,48 @@ void init_window(Window& win, const vec2i& size, const string& title) {
 }
 
 void delete_window(Window& win) {
-  glfwDestroyWindow(win.win);
+  glfwDestroyWindow(win.glfw);
   glfwTerminate();
-  win.win = nullptr;
+  win.glfw = nullptr;
 }
 
 // void* get_user_pointer(const Window& win) { return win.user_ptr; }
 
 // void set_drop_callback(Window& win, drop_callback drop_cb) {
 //  win.drop_cb = drop_cb;
-//  glfwSetDropCallback(win.win, _fw_drop_callback);
+//  glfwSetDropCallback(win.glfw, _fw_drop_callback);
 //}
 //
 // void set_key_callback(Window& win, key_callback cb) {
 //  win.key_cb = cb;
-//  glfwSetKeyCallback(win.win, _fw_key_callback);
+//  glfwSetKeyCallback(win.glfw, _fw_key_callback);
 //}
 //
 // void set_click_callback(Window& win, click_callback cb) {
 //  win.click_cb = cb;
-//  glfwSetMouseButtonCallback(win.win, _fw_click_callback);
+//  glfwSetMouseButtonCallback(win.glfw, _fw_click_callback);
 //}
 //
 // void set_scroll_callback(Window& win, scroll_callback cb) {
 //  win.scroll_cb = cb;
-//  glfwSetScrollCallback(win.win, _fw_scroll_callback);
+//  glfwSetScrollCallback(win.glfw, _fw_scroll_callback);
 //}
 
 vec2i get_framebuffer_size(const Window& win) {
   auto size = zero2i;
-  glfwGetFramebufferSize(win.win, &size.x, &size.y);
+  glfwGetFramebufferSize(win.glfw, &size.x, &size.y);
   return size;
 }
 
 vec4i get_framebuffer_viewport(const Window& win) {
   auto viewport = zero4i;
-  glfwGetFramebufferSize(win.win, &viewport.z, &viewport.w);
+  glfwGetFramebufferSize(win.glfw, &viewport.z, &viewport.w);
   return viewport;
 }
 
 vec2i get_window_size(const Window& win) {
   auto size = zero2i;
-  glfwGetWindowSize(win.win, &size.x, &size.y);
+  glfwGetWindowSize(win.glfw, &size.x, &size.y);
   return size;
 }
 
@@ -232,29 +232,29 @@ float get_framebuffer_aspect_ratio(const Window& win) {
 }
 
 bool should_window_close(const Window& win) {
-  return glfwWindowShouldClose(win.win);
+  return glfwWindowShouldClose(win.glfw);
 }
 void set_window_close(const Window& win, bool close) {
-  glfwSetWindowShouldClose(win.win, close ? GLFW_TRUE : GLFW_FALSE);
+  glfwSetWindowShouldClose(win.glfw, close ? GLFW_TRUE : GLFW_FALSE);
 }
 
 bool draw_loop(Window& win, bool wait) {
-  glfwSwapBuffers(win.win);
+  glfwSwapBuffers(win.glfw);
   process_events(win, wait);
-  if (glfwWindowShouldClose(win.win)) return true;
+  if (glfwWindowShouldClose(win.glfw)) return true;
   return false;
 }
 
 vec2f get_mouse_pos(const Window& win) {
   double mouse_posx, mouse_posy;
-  glfwGetCursorPos(win.win, &mouse_posx, &mouse_posy);
+  glfwGetCursorPos(win.glfw, &mouse_posx, &mouse_posy);
   auto pos = vec2f{(float)mouse_posx, (float)mouse_posy};
   return pos;
 }
 
 vec2f get_mouse_pos_normalized(const Window& win) {
   double mouse_posx, mouse_posy;
-  glfwGetCursorPos(win.win, &mouse_posx, &mouse_posy);
+  glfwGetCursorPos(win.glfw, &mouse_posx, &mouse_posy);
   auto  pos    = vec2f{(float)mouse_posx, (float)mouse_posy};
   auto  size   = get_window_size(win);
   auto  result = vec2f{2 * (pos.x / size.x) - 1, 1 - 2 * (pos.y / size.y)};
@@ -263,58 +263,51 @@ vec2f get_mouse_pos_normalized(const Window& win) {
   return result;
 }
 
-bool get_mouse_left(const Window& win) {
-  return glfwGetMouseButton(win.win, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
-}
-bool get_mouse_right(const Window& win) {
-  return glfwGetMouseButton(win.win, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS;
-}
-
 bool is_key_pressed(const Window& win, Key key) {
-  return glfwGetKey(win.win, (int)key) == GLFW_PRESS;
+  return glfwGetKey(win.glfw, (int)key) == GLFW_PRESS;
 }
 
-bool get_alt_key(const Window& win) {
-  return glfwGetKey(win.win, GLFW_KEY_LEFT_ALT) == GLFW_PRESS ||
-         glfwGetKey(win.win, GLFW_KEY_RIGHT_ALT) == GLFW_PRESS;
+bool is_alt_pressed(const Window& win) {
+  return glfwGetKey(win.glfw, GLFW_KEY_LEFT_ALT) == GLFW_PRESS ||
+         glfwGetKey(win.glfw, GLFW_KEY_RIGHT_ALT) == GLFW_PRESS;
 }
 
-bool get_shift_key(const Window& win) {
-  return glfwGetKey(win.win, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ||
-         glfwGetKey(win.win, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS;
+bool is_shift_pressed(const Window& win) {
+  return glfwGetKey(win.glfw, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ||
+         glfwGetKey(win.glfw, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS;
 }
 
 void process_events(Window& win, bool wait) {
   // update input
   win.input.mouse_last = win.input.mouse_pos;
   auto mouse_posx = 0.0, mouse_posy = 0.0;
-  glfwGetCursorPos(win.win, &mouse_posx, &mouse_posy);
+  glfwGetCursorPos(win.glfw, &mouse_posx, &mouse_posy);
   win.input.mouse_pos = vec2f{(float)mouse_posx, (float)mouse_posy};
   if (win.widgets_width && win.widgets_left)
     win.input.mouse_pos.x -= win.widgets_width;
-  win.input.mouse_left = glfwGetMouseButton(win.win, GLFW_MOUSE_BUTTON_LEFT) ==
+  win.input.mouse_left = glfwGetMouseButton(win.glfw, GLFW_MOUSE_BUTTON_LEFT) ==
                          GLFW_PRESS;
   win.input.mouse_right = glfwGetMouseButton(
-                              win.win, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS;
+                              win.glfw, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS;
   win.input.modifier_alt =
-      glfwGetKey(win.win, GLFW_KEY_LEFT_ALT) == GLFW_PRESS ||
-      glfwGetKey(win.win, GLFW_KEY_RIGHT_ALT) == GLFW_PRESS;
+      glfwGetKey(win.glfw, GLFW_KEY_LEFT_ALT) == GLFW_PRESS ||
+      glfwGetKey(win.glfw, GLFW_KEY_RIGHT_ALT) == GLFW_PRESS;
   win.input.modifier_shift =
-      glfwGetKey(win.win, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ||
-      glfwGetKey(win.win, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS;
+      glfwGetKey(win.glfw, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ||
+      glfwGetKey(win.glfw, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS;
   win.input.modifier_ctrl =
-      glfwGetKey(win.win, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS ||
-      glfwGetKey(win.win, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS;
+      glfwGetKey(win.glfw, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS ||
+      glfwGetKey(win.glfw, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS;
   glfwGetWindowSize(
-      win.win, &win.input.window_size.x, &win.input.window_size.y);
+      win.glfw, &win.input.window_size.x, &win.input.window_size.y);
   if (win.widgets_width) win.input.window_size.x -= win.widgets_width;
-  glfwGetFramebufferSize(win.win, &win.input.framebuffer_viewport.z,
+  glfwGetFramebufferSize(win.glfw, &win.input.framebuffer_viewport.z,
       &win.input.framebuffer_viewport.w);
   win.input.framebuffer_viewport.x = 0;
   win.input.framebuffer_viewport.y = 0;
   if (win.widgets_width) {
     auto win_size = zero2i;
-    glfwGetWindowSize(win.win, &win_size.x, &win_size.y);
+    glfwGetWindowSize(win.glfw, &win_size.x, &win_size.y);
     auto offset = (int)(win.widgets_width *
                         (float)win.input.framebuffer_viewport.z / win_size.x);
     win.input.framebuffer_viewport.z -= offset;
@@ -340,21 +333,18 @@ void process_events(Window& win, bool wait) {
     glfwPollEvents();
 }
 
-void swap_buffers(const Window& win) { glfwSwapBuffers(win.win); }
-
-// }  // namespace yocto
+void swap_buffers(const Window& win) { glfwSwapBuffers(win.glfw); }
 
 // -----------------------------------------------------------------------------
 // OPENGL WIDGETS
 // -----------------------------------------------------------------------------
-// namespace yocto {
 
 void init_widgets(Window& win, int width, bool left) {
   // init widgets
   ImGui::CreateContext();
   ImGui::GetIO().IniFilename       = nullptr;
   ImGui::GetStyle().WindowRounding = 0;
-  ImGui_ImplGlfw_InitForOpenGL(win.win, true);
+  ImGui_ImplGlfw_InitForOpenGL(win.glfw, true);
 #ifndef __APPLE__
   ImGui_ImplOpenGL3_Init();
 #else
@@ -426,7 +416,7 @@ bool is_modal_open(const Window& win, const char* lbl) {
   return ImGui::IsPopupOpen(lbl);
 }
 
-bool draw_message(const Window& win, const char* lbl, const string& message) {
+bool gui_message(const Window& win, const char* lbl, const string& message) {
   if (ImGui::BeginPopupModal(lbl)) {
     auto open = true;
     ImGui::Text("%s", message.c_str());
@@ -451,7 +441,7 @@ void push_message(const Window& win, const string& message) {
   std::lock_guard lock(_message_mutex);
   _message_queue.push_back(message);
 }
-bool draw_messages(const Window& win) {
+bool gui_messages(const Window& win) {
   std::lock_guard lock(_message_mutex);
   if (_message_queue.empty()) return false;
   if (!is_modal_open(win, "<message>")) {
@@ -569,9 +559,8 @@ struct filedialog_state {
     return true;
   }
 };
-bool draw_filedialog(const Window& win, const char* lbl, string& path,
-    bool save, const string& dirname, const string& filename,
-    const string& filter) {
+bool gui_filedialog(const Window& win, const char* lbl, string& path, bool save,
+    const string& dirname, const string& filename, const string& filter) {
   static auto states = hash_map<string, filedialog_state>{};
   ImGui::SetNextWindowSize({500, 300}, ImGuiCond_FirstUseEver);
   if (ImGui::BeginPopupModal(lbl)) {
@@ -625,23 +614,23 @@ bool draw_filedialog(const Window& win, const char* lbl, string& path,
     return false;
   }
 }
-bool draw_filedialog_button(const Window& win, const char* button_lbl,
+bool gui_filedialog_button(const Window& win, const char* button_lbl,
     bool button_active, const char* lbl, string& path, bool save,
     const string& dirname, const string& filename, const string& filter) {
   if (is_modal_open(win, lbl)) {
-    return draw_filedialog(win, lbl, path, save, dirname, filename, filter);
+    return gui_filedialog(win, lbl, path, save, dirname, filename, filter);
   } else {
-    if (draw_button(win, button_lbl, button_active)) {
+    if (gui_button(win, button_lbl, button_active)) {
       open_modal(win, lbl);
     }
     return false;
   }
 }
 
-bool draw_button(const Window& win, const char* lbl) {
+bool gui_button(const Window& win, const char* lbl) {
   return ImGui::Button(lbl);
 }
-bool draw_button(const Window& win, const char* lbl, bool enabled) {
+bool gui_button(const Window& win, const char* lbl, bool enabled) {
   if (enabled) {
     return ImGui::Button(lbl);
   } else {
@@ -654,15 +643,15 @@ bool draw_button(const Window& win, const char* lbl, bool enabled) {
   }
 }
 
-void draw_label(const Window& win, const char* lbl, const string& text) {
+void gui_label(const Window& win, const char* lbl, const string& text) {
   ImGui::LabelText(lbl, "%s", text.c_str());
 }
 
-void draw_separator(const Window& win) { ImGui::Separator(); }
+void gui_separator(const Window& win) { ImGui::Separator(); }
 
 void continue_line(const Window& win) { ImGui::SameLine(); }
 
-bool draw_textinput(const Window& win, const char* lbl, string& value) {
+bool gui_textinput(const Window& win, const char* lbl, string& value) {
   char buffer[4096];
   auto num = 0;
   for (auto c : value) buffer[num++] = c;
@@ -672,89 +661,89 @@ bool draw_textinput(const Window& win, const char* lbl, string& value) {
   return edited;
 }
 
-bool draw_slider(
+bool gui_slider(
     const Window& win, const char* lbl, float& value, float min, float max) {
   return ImGui::SliderFloat(lbl, &value, min, max);
 }
-bool draw_slider(
+bool gui_slider(
     const Window& win, const char* lbl, vec2f& value, float min, float max) {
   return ImGui::SliderFloat2(lbl, &value.x, min, max);
 }
-bool draw_slider(
+bool gui_slider(
     const Window& win, const char* lbl, vec3f& value, float min, float max) {
   return ImGui::SliderFloat3(lbl, &value.x, min, max);
 }
-bool draw_slider(
+bool gui_slider(
     const Window& win, const char* lbl, vec4f& value, float min, float max) {
   return ImGui::SliderFloat4(lbl, &value.x, min, max);
 }
 
-bool draw_slider(
+bool gui_slider(
     const Window& win, const char* lbl, int& value, int min, int max) {
   return ImGui::SliderInt(lbl, &value, min, max);
 }
-bool draw_slider(
+bool gui_slider(
     const Window& win, const char* lbl, vec2i& value, int min, int max) {
   return ImGui::SliderInt2(lbl, &value.x, min, max);
 }
-bool draw_slider(
+bool gui_slider(
     const Window& win, const char* lbl, vec3i& value, int min, int max) {
   return ImGui::SliderInt3(lbl, &value.x, min, max);
 }
-bool draw_slider(
+bool gui_slider(
     const Window& win, const char* lbl, vec4i& value, int min, int max) {
   return ImGui::SliderInt4(lbl, &value.x, min, max);
 }
 
-bool draw_dragger(const Window& win, const char* lbl, float& value, float speed,
+bool gui_dragger(const Window& win, const char* lbl, float& value, float speed,
     float min, float max) {
   return ImGui::DragFloat(lbl, &value, speed, min, max);
 }
-bool draw_dragger(const Window& win, const char* lbl, vec2f& value, float speed,
+bool gui_dragger(const Window& win, const char* lbl, vec2f& value, float speed,
     float min, float max) {
   return ImGui::DragFloat2(lbl, &value.x, speed, min, max);
 }
-bool draw_dragger(const Window& win, const char* lbl, vec3f& value, float speed,
+bool gui_dragger(const Window& win, const char* lbl, vec3f& value, float speed,
     float min, float max) {
   return ImGui::DragFloat3(lbl, &value.x, speed, min, max);
 }
-bool draw_dragger(const Window& win, const char* lbl, vec4f& value, float speed,
+bool gui_dragger(const Window& win, const char* lbl, vec4f& value, float speed,
     float min, float max) {
   return ImGui::DragFloat4(lbl, &value.x, speed, min, max);
 }
 
-bool draw_dragger(const Window& win, const char* lbl, int& value, float speed,
+bool gui_dragger(const Window& win, const char* lbl, int& value, float speed,
     int min, int max) {
   return ImGui::DragInt(lbl, &value, speed, min, max);
 }
-bool draw_dragger(const Window& win, const char* lbl, vec2i& value, float speed,
+bool gui_dragger(const Window& win, const char* lbl, vec2i& value, float speed,
     int min, int max) {
   return ImGui::DragInt2(lbl, &value.x, speed, min, max);
 }
-bool draw_dragger(const Window& win, const char* lbl, vec3i& value, float speed,
+bool gui_dragger(const Window& win, const char* lbl, vec3i& value, float speed,
     int min, int max) {
   return ImGui::DragInt3(lbl, &value.x, speed, min, max);
 }
-bool draw_dragger(const Window& win, const char* lbl, vec4i& value, float speed,
+bool gui_dragger(const Window& win, const char* lbl, vec4i& value, float speed,
     int min, int max) {
   return ImGui::DragInt4(lbl, &value.x, speed, min, max);
 }
 
-bool draw_checkbox(const Window& win, const char* lbl, bool& value) {
+bool gui_checkbox(const Window& win, const char* lbl, bool& value) {
   return ImGui::Checkbox(lbl, &value);
 }
 
-bool draw_coloredit(const Window& win, const char* lbl, vec3f& value) {
+bool gui_coloredit(const Window& win, const char* lbl, vec3f& value) {
   auto flags = ImGuiColorEditFlags_Float;
   return ImGui::ColorEdit3(lbl, &value.x, flags);
 }
 
-bool draw_coloredit(const Window& win, const char* lbl, vec4f& value) {
+bool gui_coloredit(const Window& win, const char* lbl, vec4f& value) {
   auto flags = ImGuiColorEditFlags_Float;
   return ImGui::ColorEdit4(lbl, &value.x, flags);
 }
 
-bool draw_hdrcoloredit(const Window& win, const char* lbl, vec3f& value) {
+bool gui_hdrcoloredit(const Window& win, const char* lbl, vec3f& value) {
   auto color    = value;
   auto exposure = 0.0f;
   auto scale    = max(color);
@@ -762,9 +751,9 @@ bool draw_hdrcoloredit(const Window& win, const char* lbl, vec3f& value) {
     color /= scale;
     exposure = yocto::log2(scale);
   }
-  auto edit_exposure = draw_slider(
+  auto edit_exposure = gui_slider(
       win, (lbl + " [exp]"s).c_str(), exposure, 0, 10);
-  auto edit_color = draw_coloredit(win, (lbl + " [col]"s).c_str(), color);
+  auto edit_color = gui_coloredit(win, (lbl + " [col]"s).c_str(), color);
   if (edit_exposure || edit_color) {
     value = color * yocto::exp2(exposure);
     return true;
@@ -772,7 +761,7 @@ bool draw_hdrcoloredit(const Window& win, const char* lbl, vec3f& value) {
     return false;
   }
 }
-bool draw_hdrcoloredit(const Window& win, const char* lbl, vec4f& value) {
+bool gui_hdrcoloredit(const Window& win, const char* lbl, vec4f& value) {
   auto color    = value;
   auto exposure = 0.0f;
   auto scale    = max(xyz(color));
@@ -780,9 +769,9 @@ bool draw_hdrcoloredit(const Window& win, const char* lbl, vec4f& value) {
     xyz(color) /= scale;
     exposure = yocto::log2(scale);
   }
-  auto edit_exposure = draw_slider(
+  auto edit_exposure = gui_slider(
       win, (lbl + " [exp]"s).c_str(), exposure, 0, 10);
-  auto edit_color = draw_coloredit(win, (lbl + " [col]"s).c_str(), color);
+  auto edit_color = gui_coloredit(win, (lbl + " [col]"s).c_str(), color);
   if (edit_exposure || edit_color) {
     xyz(value) = xyz(color) * yocto::exp2(exposure);
     value.w    = color.w;
@@ -792,7 +781,7 @@ bool draw_hdrcoloredit(const Window& win, const char* lbl, vec4f& value) {
   }
 }
 
-bool draw_combobox(const Window& win, const char* lbl, int& value,
+bool gui_combobox(const Window& win, const char* lbl, int& value,
     const vector<string>& labels) {
   if (!ImGui::BeginCombo(lbl, labels[value].c_str())) return false;
   auto old_val = value;
@@ -806,7 +795,7 @@ bool draw_combobox(const Window& win, const char* lbl, int& value,
   return value != old_val;
 }
 
-bool draw_combobox(const Window& win, const char* lbl, string& value,
+bool gui_combobox(const Window& win, const char* lbl, string& value,
     const vector<string>& labels) {
   if (!ImGui::BeginCombo(lbl, value.c_str())) return false;
   auto old_val = value;
@@ -821,7 +810,7 @@ bool draw_combobox(const Window& win, const char* lbl, string& value,
   return value != old_val;
 }
 
-bool draw_combobox(const Window& win, const char* lbl, int& idx, int num,
+bool gui_combobox(const Window& win, const char* lbl, int& idx, int num,
     const std::function<const char*(int)>& labels, bool include_null) {
   if (num <= 0) idx = -1;
   if (!ImGui::BeginCombo(lbl, idx >= 0 ? labels(idx) : "<none>")) return false;
@@ -842,23 +831,23 @@ bool draw_combobox(const Window& win, const char* lbl, int& idx, int num,
   return idx != old_idx;
 }
 
-void draw_histogram(
+void gui_histogram(
     const Window& win, const char* lbl, const float* values, int count) {
   ImGui::PlotHistogram(lbl, values, count);
 }
-void draw_histogram(
+void gui_histogram(
     const Window& win, const char* lbl, const vector<float>& values) {
   ImGui::PlotHistogram(lbl, values.data(), (int)values.size(), 0, nullptr,
       flt_max, flt_max, {0, 0}, 4);
 }
-void draw_histogram(
+void gui_histogram(
     const Window& win, const char* lbl, const vector<vec2f>& values) {
   ImGui::PlotHistogram((lbl + " x"s).c_str(), (const float*)values.data() + 0,
       (int)values.size(), 0, nullptr, flt_max, flt_max, {0, 0}, sizeof(vec2f));
   ImGui::PlotHistogram((lbl + " y"s).c_str(), (const float*)values.data() + 1,
       (int)values.size(), 0, nullptr, flt_max, flt_max, {0, 0}, sizeof(vec2f));
 }
-void draw_histogram(
+void gui_histogram(
     const Window& win, const char* lbl, const vector<vec3f>& values) {
   ImGui::PlotHistogram((lbl + " x"s).c_str(), (const float*)values.data() + 0,
       (int)values.size(), 0, nullptr, flt_max, flt_max, {0, 0}, sizeof(vec3f));
@@ -867,7 +856,7 @@ void draw_histogram(
   ImGui::PlotHistogram((lbl + " z"s).c_str(), (const float*)values.data() + 2,
       (int)values.size(), 0, nullptr, flt_max, flt_max, {0, 0}, sizeof(vec3f));
 }
-void draw_histogram(
+void gui_histogram(
     const Window& win, const char* lbl, const vector<vec4f>& values) {
   ImGui::PlotHistogram((lbl + " x"s).c_str(), (const float*)values.data() + 0,
       (int)values.size(), 0, nullptr, flt_max, flt_max, {0, 0}, sizeof(vec4f));
@@ -955,7 +944,7 @@ void clear_logs(const Window& win) {
   _log_widget.Clear();
   _log_mutex.unlock();
 }
-void draw_log(const Window& win) {
+void gui_log(const Window& win) {
   _log_mutex.lock();
   _log_widget.Draw();
   _log_mutex.unlock();
@@ -965,35 +954,35 @@ void draw_log(const Window& win) {
 //   // update input
 //   win->input.mouse_last = win->input.mouse_pos;
 //   auto mouse_posx = 0.0, mouse_posy = 0.0;
-//   glfwGetCursorPos(win.win, &mouse_posx, &mouse_posy);
+//   glfwGetCursorPos(win.glfw, &mouse_posx, &mouse_posy);
 //   win->input.mouse_pos = vec2f{(float)mouse_posx, (float)mouse_posy};
 //   if (win->widgets_width && win->widgets_left)
 //     win->input.mouse_pos.x -= win->widgets_width;
 //   win->input.mouse_left = glfwGetMouseButton(
-//                               win.win, GLFW_MOUSE_BUTTON_LEFT) ==
+//                               win.glfw, GLFW_MOUSE_BUTTON_LEFT) ==
 //                               GLFW_PRESS;
 //   win->input.mouse_right = glfwGetMouseButton(
-//                                win.win, GLFW_MOUSE_BUTTON_RIGHT) ==
+//                                win.glfw, GLFW_MOUSE_BUTTON_RIGHT) ==
 //                                GLFW_PRESS;
 //   win->input.modifier_alt =
-//       glfwGetKey(win.win, GLFW_KEY_LEFT_ALT) == GLFW_PRESS ||
-//       glfwGetKey(win.win, GLFW_KEY_RIGHT_ALT) == GLFW_PRESS;
+//       glfwGetKey(win.glfw, GLFW_KEY_LEFT_ALT) == GLFW_PRESS ||
+//       glfwGetKey(win.glfw, GLFW_KEY_RIGHT_ALT) == GLFW_PRESS;
 //   win->input.modifier_shift =
-//       glfwGetKey(win.win, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ||
-//       glfwGetKey(win.win, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS;
+//       glfwGetKey(win.glfw, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ||
+//       glfwGetKey(win.glfw, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS;
 //   win->input.modifier_ctrl =
-//       glfwGetKey(win.win, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS ||
-//       glfwGetKey(win.win, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS;
+//       glfwGetKey(win.glfw, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS ||
+//       glfwGetKey(win.glfw, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS;
 //   glfwGetWindowSize(
-//       win.win, &win->input.window_size.x, &win->input.window_size.y);
+//       win.glfw, &win->input.window_size.x, &win->input.window_size.y);
 //   if (win->widgets_width) win->input.window_size.x -= win->widgets_width;
-//   glfwGetFramebufferSize(win.win, &win->input.framebuffer_viewport.z,
+//   glfwGetFramebufferSize(win.glfw, &win->input.framebuffer_viewport.z,
 //       &win->input.framebuffer_viewport.w);
 //   win->input.framebuffer_viewport.x = 0;
 //   win->input.framebuffer_viewport.y = 0;
 //   if (win->widgets_width) {
 //     auto win_size = zero2i;
-//     glfwGetWindowSize(win.win, &win_size.x, &win_size.y);
+//     glfwGetWindowSize(win.glfw, &win_size.x, &win_size.y);
 //     auto offset = (int)(win->widgets_width *
 //                         (float)win->input.framebuffer_viewport.z /
 //                         win_size.x);
