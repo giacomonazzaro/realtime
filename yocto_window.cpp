@@ -208,28 +208,28 @@ void delete_window(Window& win) {
 //  glfwSetScrollCallback(win.glfw, _fw_scroll_callback);
 //}
 
-vec2i get_framebuffer_size(const Window& win) {
-  auto size = zero2i;
-  glfwGetFramebufferSize(win.glfw, &size.x, &size.y);
-  return size;
-}
+// vec2i get_framebuffer_size(const Window& win) {
+//   auto size = zero2i;
+//   glfwGetFramebufferSize(win.glfw, &size.x, &size.y);
+//   return size;
+// }
 
-vec4i get_framebuffer_viewport(const Window& win) {
-  auto viewport = zero4i;
-  glfwGetFramebufferSize(win.glfw, &viewport.z, &viewport.w);
-  return viewport;
-}
+// vec4i get_framebuffer_viewport(const Window& win) {
+//   auto viewport = zero4i;
+//   glfwGetFramebufferSize(win.glfw, &viewport.z, &viewport.w);
+//   return viewport;
+// }
 
-vec2i get_window_size(const Window& win) {
-  auto size = zero2i;
-  glfwGetWindowSize(win.glfw, &size.x, &size.y);
-  return size;
-}
+// vec2i get_window_size(const Window& win) {
+//   auto size = zero2i;
+//   glfwGetWindowSize(win.glfw, &size.x, &size.y);
+//   return size;
+// }
 
-float get_framebuffer_aspect_ratio(const Window& win) {
-  auto size = get_framebuffer_size(win);
-  return (float)size.x / (float)size.y;
-}
+// float get_framebuffer_aspect_ratio(const Window& win) {
+//   auto size = get_framebuffer_size(win);
+//   return (float)size.x / (float)size.y;
+// }
 
 bool should_window_close(const Window& win) {
   return glfwWindowShouldClose(win.glfw);
@@ -245,18 +245,9 @@ bool draw_loop(Window& win, bool wait) {
   return false;
 }
 
-vec2f get_mouse_pos(const Window& win) {
-  double mouse_posx, mouse_posy;
-  glfwGetCursorPos(win.glfw, &mouse_posx, &mouse_posy);
-  auto pos = vec2f{(float)mouse_posx, (float)mouse_posy};
-  return pos;
-}
-
 vec2f get_mouse_pos_normalized(const Window& win) {
-  double mouse_posx, mouse_posy;
-  glfwGetCursorPos(win.glfw, &mouse_posx, &mouse_posy);
-  auto  pos    = vec2f{(float)mouse_posx, (float)mouse_posy};
-  auto  size   = get_window_size(win);
+  auto& pos    = win.input.mouse_pos;
+  auto  size   = win.input.window_size;
   auto  result = vec2f{2 * (pos.x / size.x) - 1, 1 - 2 * (pos.y / size.y)};
   float aspect = float(size.x) / size.y;
   result.x *= aspect;
@@ -265,16 +256,6 @@ vec2f get_mouse_pos_normalized(const Window& win) {
 
 bool is_key_pressed(const Window& win, Key key) {
   return glfwGetKey(win.glfw, (int)key) == GLFW_PRESS;
-}
-
-bool is_alt_pressed(const Window& win) {
-  return glfwGetKey(win.glfw, GLFW_KEY_LEFT_ALT) == GLFW_PRESS ||
-         glfwGetKey(win.glfw, GLFW_KEY_RIGHT_ALT) == GLFW_PRESS;
-}
-
-bool is_shift_pressed(const Window& win) {
-  return glfwGetKey(win.glfw, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ||
-         glfwGetKey(win.glfw, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS;
 }
 
 void process_events(Window& win, bool wait) {
@@ -313,6 +294,12 @@ void process_events(Window& win, bool wait) {
     win.input.framebuffer_viewport.z -= offset;
     if (win.widgets_left) win.input.framebuffer_viewport.x += offset;
   }
+  win.input.window_aspect = float(win.input.window_size.x) /
+                            float(win.input.window_size.y);
+  win.input.framebuffer_aspect = float(win.input.framebuffer_viewport.z -
+                                       win.input.framebuffer_viewport.x) /
+                                 float(win.input.framebuffer_viewport.w -
+                                       win.input.framebuffer_viewport.y);
   if (win.widgets_width) {
     auto io                  = &ImGui::GetIO();
     win.input.widgets_active = io->WantTextInput || io->WantCaptureMouse ||
@@ -362,7 +349,7 @@ bool get_widgets_active(const Window& win) {
 
 void begin_widgets(
     const Window& win, const vec2f& position, const vec2f& size) {
-  auto win_size = get_window_size(win);
+  auto win_size = win.input.window_size;
   ImGui_ImplOpenGL3_NewFrame();
   ImGui_ImplGlfw_NewFrame();
   ImGui::NewFrame();
@@ -382,7 +369,7 @@ void begin_widgets(
 }
 
 void begin_widgets(const Window& win) {
-  auto win_size = get_window_size(win);
+    auto win_size = win.input.window_size;
   begin_widgets(win, {0, 0}, {(float)win.widgets_width, (float)win_size.y});
 }
 

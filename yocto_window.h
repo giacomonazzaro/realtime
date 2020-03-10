@@ -18,12 +18,12 @@ enum struct Key : int {
   // For chars, always use upper case!
 
   // Function keys
-  escape    = 256,
-  enter     = 257,
-  tab       = 258,
-  backspace = 259,
-  insert    = 260,
-  //  delete    = 261,
+  escape        = 256,
+  enter         = 257,
+  tab           = 258,
+  backspace     = 259,
+  insert        = 260,
+  _delete       = 261,
   right         = 262,
   left          = 263,
   down          = 264,
@@ -109,7 +109,9 @@ struct Input {
   double   time_now             = 0;             // time now
   double   time_delta           = 0;             // time delta
   vec2i    window_size          = {0, 0};        // window size
+  float    window_aspect        = 0;             // window aspect ratio
   vec4i    framebuffer_viewport = {0, 0, 0, 0};  // framebuffer viewport
+  float    framebuffer_aspect   = 0;             // framebuffer aspect ratio
 };
 
 struct Window;
@@ -165,22 +167,11 @@ struct Window {
 void init_window(Window& win, const vec2i& size, const string& title);
 void delete_window(Window& win);
 
-void* get_user_pointer(const Window& win);
-
-vec2i get_window_size(const Window& win);
-float get_window_aspect_ratio(const Window& win);
-vec2i get_framebuffer_size(const Window& win);
-vec4i get_framebuffer_viewport(const Window& win);
-
 bool should_window_close(const Window& win);
 void set_window_close(const Window& win, bool close = true);
 
-vec2f get_mouse_pos(const Window& win);
 vec2f get_mouse_pos_normalized(const Window& win);
-
-bool is_alt_pressed(const Window& win);
-bool is_shift_pressed(const Window& win);
-bool is_key_pressed(const Window& win, Key key);
+bool  is_key_pressed(const Window& win, Key key);
 
 void process_events(Window& win, bool wait = false);
 void swap_buffers(const Window& win);
