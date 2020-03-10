@@ -20,7 +20,7 @@ using namespace yocto;
 bool init_opengl();
 
 // OpenGL program
-struct opengl_program {
+struct Program {
   string vertex_code;
   string fragment_code;
   string vertex_filename;
@@ -32,7 +32,7 @@ struct opengl_program {
 };
 
 // OpenGL texture
-struct opengl_texture {
+struct Texture {
   uint  texture_id = 0;
   vec2i size       = {0, 0};
   bool  mipmap     = false;
@@ -43,7 +43,7 @@ struct opengl_texture {
 };
 
 // OpenGL vertex buffer
-struct opengl_arraybuffer {
+struct Arraybuffer {
   uint buffer_id = 0;
   int  num       = 0;
   int  elem_size = 0;
@@ -51,7 +51,7 @@ struct opengl_arraybuffer {
 };
 
 // OpenGL element buffer
-struct opengl_elementbuffer {
+struct Elementbuffer {
   uint buffer_id = 0;
   int  num       = 0;
   int  elem_size = 0;
@@ -66,27 +66,27 @@ struct opengl_elementbuffer {
 // namespace yocto {
 
 // OpenGL shape
-struct opengl_shape {
-  vector<opengl_arraybuffer> vertex_attributes = {};
-  opengl_elementbuffer       elements          = {};
-  uint                       vao               = 0;
+struct Shape {
+  vector<Arraybuffer> vertex_attributes = {};
+  Elementbuffer       elements          = {};
+  uint                vao               = 0;
 
   enum struct type { points, lines, triangles };
   type type = type::triangles;
 };
 
 template <typename Type>
-struct opengl_uniform {
+struct Uniform {
   const char* name;
   Type        value;
-  opengl_uniform(const char* n, const Type& v) : name(n), value(v) {}
+  Uniform(const char* n, const Type& v) : name(n), value(v) {}
 };
 
 // OpenGL image data
-struct opengl_image {
-  opengl_texture texture = {};
-  opengl_program program = {};
-  opengl_shape   shape   = {};
+struct Image {
+  Texture texture = {};
+  Program program = {};
+  Shape   shape   = {};
 
   vec2i size() const { return texture.size; }
         operator bool() const { return (bool)texture; }
@@ -105,19 +105,19 @@ struct draw_glimage_params {
 };
 
 // update image data
-void update_glimage(opengl_image& glimage, const image<vec4f>& img,
+void update_glimage(Image& glimage, const image<vec4f>& img,
     bool linear = false, bool mipmap = false);
-void update_glimage(opengl_image& glimage, const image<vec4b>& img,
+void update_glimage(Image& glimage, const image<vec4b>& img,
     bool linear = false, bool mipmap = false);
 
 // update the image data for a small region
 void update_glimage_region(
-    opengl_image& glimage, const image<vec4f>& img, const image_region& region);
+    Image& glimage, const image<vec4f>& img, const image_region& region);
 void update_glimage_region(
-    opengl_image& glimage, const image<vec4b>& img, const image_region& region);
+    Image& glimage, const image<vec4b>& img, const image_region& region);
 
 // draw image
-void draw_glimage(opengl_image& glimage, const draw_glimage_params& params);
+void draw_glimage(Image& glimage, const draw_glimage_params& params);
 
 // }  // namespace yocto
 
@@ -127,7 +127,7 @@ void draw_glimage(opengl_image& glimage, const draw_glimage_params& params);
 // namespace yocto {
 
 // Opengl caemra
-struct opengl_camera {
+struct Camera {
   frame3f frame  = identity3x4f;
   float   lens   = 0.050;
   float   asepct = 1;
@@ -138,7 +138,7 @@ struct opengl_camera {
 };
 
 // Opengl material
-struct opengl_material {
+struct Material {
   vec3f emission      = zero3f;
   vec3f diffuse       = zero3f;
   vec3f specular      = zero3f;
@@ -155,7 +155,7 @@ struct opengl_material {
 };
 
 // Opengl instance group
-struct opengl_instance {
+struct Instance {
   frame3f frame       = identity3x4f;
   int     shape       = 0;
   int     material    = 0;
@@ -163,21 +163,21 @@ struct opengl_instance {
 };
 
 // Opengl light
-struct opengl_light {
+struct Light {
   vec3f position = zero3f;
   vec3f emission = zero3f;
   int   type     = 0;
 };
 
 // Opengl scene
-struct opengl_scene {
-  vector<opengl_camera>   cameras   = {};
-  vector<opengl_instance> instances = {};
-  vector<opengl_shape>    shapes    = {};
-  vector<opengl_material> materials = {};
-  vector<opengl_texture>  textures  = {};
-  vector<opengl_light>    lights    = {};
-  opengl_program          program   = {};
+struct Scene {
+  vector<Camera>   cameras   = {};
+  vector<Instance> instances = {};
+  vector<Shape>    shapes    = {};
+  vector<Material> materials = {};
+  vector<Texture>  textures  = {};
+  vector<Light>    lights    = {};
+  Program          program   = {};
 };
 
 // Draw options
@@ -199,11 +199,11 @@ struct draw_glscene_params {
 };
 
 // Initialize an OpenGL scene
-void make_glscene(opengl_scene& scene);
+void make_glscene(Scene& scene);
 
 // Draw an OpenGL scene
-void draw_glscene(opengl_scene& state, const vec4i& viewport,
-    const draw_glscene_params& params);
+void draw_glscene(
+    Scene& state, const vec4i& viewport, const draw_glscene_params& params);
 
 // }  // namespace yocto
 
@@ -221,75 +221,73 @@ void set_glviewport(const vec4i& viewport);
 void set_glwireframe(bool enabled);
 void set_glblending(bool enabled);
 
-void load_glprogram(opengl_program& program, const string& vertex_filename,
+void load_glprogram(Program& program, const string& vertex_filename,
     const string& fragment_filename);
-void reload_glprogram(opengl_program& program);
-bool init_glprogram(opengl_program& program, const char* vertex,
-    const char* fragment, bool abort_on_error = false);
-bool init_glprogram(opengl_program& program, bool abort_on_error = false);
+void reload_glprogram(Program& program);
+bool init_glprogram(Program& program, const char* vertex, const char* fragment,
+    bool abort_on_error = false);
+bool init_glprogram(Program& program, bool abort_on_error = false);
 
-opengl_program create_glprogram(const string& vertex_filename,
+Program create_glprogram(const string& vertex_filename,
     const string& fragment_filename, bool abort_on_error = false);
 
-void delete_glprogram(opengl_program& program);
+void delete_glprogram(Program& program);
 
-void bind_glprogram(const opengl_program& program);
-void unbind_opengl_program();
+void bind_glprogram(const Program& program);
+void unbind_Program();
 
-void init_gltexture(opengl_texture& texture, const vec2i& size, bool as_float,
+void init_gltexture(Texture& texture, const vec2i& size, bool as_float,
     bool as_srgb, bool linear, bool mipmap);
 
-void update_gltexture(
-    opengl_texture& texture, const image<vec4f>& img, bool mipmap);
-void update_gltexture_region(opengl_texture& texture, const image<vec4f>& img,
+void update_gltexture(Texture& texture, const image<vec4f>& img, bool mipmap);
+void update_gltexture_region(Texture& texture, const image<vec4f>& img,
     const image_region& region, bool mipmap);
 
-inline void init_gltexture(opengl_texture& texture, const image<vec4f>& img,
+inline void init_gltexture(Texture& texture, const image<vec4f>& img,
     bool as_float, bool linear, bool mipmap) {
   init_gltexture(texture, img.size(), as_float, false, linear, mipmap);
   update_gltexture(texture, img, mipmap);
 }
 
-void init_gltexture(opengl_texture& texture, const image<vec4b>& img,
-    bool as_srgb, bool linear, bool mipmap);
-void update_gltexture(
-    opengl_texture& texture, const image<vec4b>& img, bool mipmap);
-void update_gltexture_region(opengl_texture& texture, const image<vec4b>& img,
+void init_gltexture(Texture& texture, const image<vec4b>& img, bool as_srgb,
+    bool linear, bool mipmap);
+void update_gltexture(Texture& texture, const image<vec4b>& img, bool mipmap);
+void update_gltexture_region(Texture& texture, const image<vec4b>& img,
     const image_region& region, bool mipmap);
 
-inline void init_gltexture(opengl_texture& texture, const image<vec4b>& img,
+inline void init_gltexture(Texture& texture, const image<vec4b>& img,
     bool as_srgb, bool linear, bool mipmap) {
   init_gltexture(texture, img.size(), false, as_srgb, linear, mipmap);
   update_gltexture(texture, img, mipmap);
 }
 
-void delete_gltexture(opengl_texture& texture);
+void delete_gltexture(Texture& texture);
 
-bool init_opengl_vertex_array_object(uint& vao);
-bool delete_opengl_vertex_array_object(uint& vao);
-bool bind_opengl_vertex_array_object(uint vao);
+bool init_Vertex_array_object(uint& vao);
+bool delete_Vertex_array_object(uint& vao);
+bool bind_Vertex_array_object(uint vao);
 
-void init_glarraybuffer(opengl_arraybuffer& buffer, const vector<float>& data,
-    bool dynamic = false);
-void init_glarraybuffer(opengl_arraybuffer& buffer, const vector<vec2f>& data,
-    bool dynamic = false);
-void init_glarraybuffer(opengl_arraybuffer& buffer, const vector<vec3f>& data,
-    bool dynamic = false);
-void init_glarraybuffer(opengl_arraybuffer& buffer, const vector<vec4f>& data,
-    bool dynamic = false);
+void init_glarraybuffer(
+    Arraybuffer& buffer, const vector<float>& data, bool dynamic = false);
+void init_glarraybuffer(
+    Arraybuffer& buffer, const vector<vec2f>& data, bool dynamic = false);
+void init_glarraybuffer(
+    Arraybuffer& buffer, const vector<vec3f>& data, bool dynamic = false);
+void init_glarraybuffer(
+    Arraybuffer& buffer, const vector<vec4f>& data, bool dynamic = false);
 
-void delete_glarraybuffer(opengl_arraybuffer& buffer);
+void delete_glarraybuffer(Arraybuffer& buffer);
 
-void init_glelementbuffer(opengl_elementbuffer& buffer, const vector<int>& data,
-    bool dynamic = false);
-void init_glelementbuffer(opengl_elementbuffer& buffer,
-    const vector<vec2i>& data, bool dynamic = false);
-void init_glelementbuffer(opengl_elementbuffer& buffer,
-    const vector<vec3i>& data, bool dynamic = false);
+void init_glelementbuffer(
+    Elementbuffer& buffer, const vector<int>& data, bool dynamic = false);
+void init_glelementbuffer(
+    Elementbuffer& buffer, const vector<vec2i>& data, bool dynamic = false);
+void init_glelementbuffer(
+    Elementbuffer& buffer, const vector<vec3i>& data, bool dynamic = false);
 
-void delete_glelementbuffer(opengl_elementbuffer& buffer);
+void delete_glelementbuffer(Elementbuffer& buffer);
 
-int get_gluniform_location(const opengl_program& program, const char* name);
+int get_gluniform_location(const Program& program, const char* name);
 
 void set_gluniform(int location, int value);
 void set_gluniform(int location, const vec2i& value);
@@ -306,7 +304,7 @@ void set_gluniform(int location, const frame3f& value);
 
 template <typename T>
 inline void set_gluniform(
-    const opengl_program& program, const char* name, const T& value) {
+    const Program& program, const char* name, const T& value) {
   set_gluniform(get_gluniform_location(program, name), value);
 }
 
@@ -314,51 +312,46 @@ void set_gluniform(int location, const float* value, int num_values);
 void set_gluniform(int location, const vec3f* value, int num_values);
 
 template <typename T>
-inline void set_gluniform(const opengl_program& program, const char* name,
-    const T* values, int num_values) {
+inline void set_gluniform(
+    const Program& program, const char* name, const T* values, int num_values) {
   set_gluniform(get_gluniform_location(program, name), values, num_values);
 }
 
+void set_gluniform_texture(int location, const Texture& texture, int unit);
 void set_gluniform_texture(
-    int location, const opengl_texture& texture, int unit);
-void set_gluniform_texture(const opengl_program& program, const char* name,
-    const opengl_texture& texture, int unit);
+    const Program& program, const char* name, const Texture& texture, int unit);
 void set_gluniform_texture(
-    int location, int locatiom_on, const opengl_texture& texture, int unit);
-void set_gluniform_texture(const opengl_program& program, const char* name,
-    const char* name_on, const opengl_texture& texture, int unit);
+    int location, int locatiom_on, const Texture& texture, int unit);
+void set_gluniform_texture(const Program& program, const char* name,
+    const char* name_on, const Texture& texture, int unit);
 
-int get_glvertexattrib_location(
-    const opengl_program& program, const char* name);
+int get_glvertexattrib_location(const Program& program, const char* name);
 
+void set_glvertexattrib(int location, const Arraybuffer& buffer, int elem_size);
+void set_glvertexattrib(int location, const Arraybuffer& buffer, float value);
 void set_glvertexattrib(
-    int location, const opengl_arraybuffer& buffer, int elem_size);
+    int location, const Arraybuffer& buffer, const vec2f& value);
 void set_glvertexattrib(
-    int location, const opengl_arraybuffer& buffer, float value);
+    int location, const Arraybuffer& buffer, const vec3f& value);
 void set_glvertexattrib(
-    int location, const opengl_arraybuffer& buffer, const vec2f& value);
-void set_glvertexattrib(
-    int location, const opengl_arraybuffer& buffer, const vec3f& value);
-void set_glvertexattrib(
-    int location, const opengl_arraybuffer& buffer, const vec4f& value);
+    int location, const Arraybuffer& buffer, const vec4f& value);
 
 template <typename T>
-inline void set_glvertexattrib(const opengl_program& program, const char* name,
-    const opengl_arraybuffer& buffer, const T& value) {
+inline void set_glvertexattrib(const Program& program, const char* name,
+    const Arraybuffer& buffer, const T& value) {
   set_glvertexattrib(get_glvertexattrib_location(program, name), buffer, value);
 }
 
-void draw_glpoints(const opengl_elementbuffer& buffer, int num);
-void draw_glpoints(const opengl_arraybuffer& buffer, int num);
-void draw_gllines(const opengl_elementbuffer& buffer, int num);
-void draw_gllines(const opengl_arraybuffer& buffer, int num);
-void draw_gltriangles(const opengl_elementbuffer& buffer, int num);
-void draw_gltriangles(const opengl_arraybuffer& buffer, int num);
+void draw_glpoints(const Elementbuffer& buffer, int num);
+void draw_glpoints(const Arraybuffer& buffer, int num);
+void draw_gllines(const Elementbuffer& buffer, int num);
+void draw_gllines(const Arraybuffer& buffer, int num);
+void draw_gltriangles(const Elementbuffer& buffer, int num);
+void draw_gltriangles(const Arraybuffer& buffer, int num);
 
 template <typename T>
-int set_vertex_attribute(
-    opengl_shape& shape, int index, const vector<T>& data) {
-  bind_opengl_vertex_array_object(shape.vao);
+int set_vertex_attribute(Shape& shape, int index, const vector<T>& data) {
+  bind_Vertex_array_object(shape.vao);
   // @Speed: update instead of delete
   delete_glarraybuffer(shape.vertex_attributes[index]);
   init_glarraybuffer(shape.vertex_attributes[index], data);
@@ -368,8 +361,8 @@ int set_vertex_attribute(
 }
 
 template <typename T>
-int add_vertex_attribute(opengl_shape& shape, const vector<T>& data) {
-  bind_opengl_vertex_array_object(shape.vao);
+int add_vertex_attribute(Shape& shape, const vector<T>& data) {
+  bind_Vertex_array_object(shape.vao);
   int index = shape.vertex_attributes.size();
   shape.vertex_attributes.push_back({});
   init_glarraybuffer(shape.vertex_attributes.back(), data);
@@ -379,74 +372,73 @@ int add_vertex_attribute(opengl_shape& shape, const vector<T>& data) {
 }
 
 template <typename T>
-void init_elements(opengl_shape& shape, const vector<T>& data) {
-  bind_opengl_vertex_array_object(shape.vao);
+void init_elements(Shape& shape, const vector<T>& data) {
+  bind_Vertex_array_object(shape.vao);
   check_glerror();
   init_glelementbuffer(shape.elements, data);
   int elem_size = sizeof(T) / sizeof(int);
-  if (elem_size == 1) shape.type = opengl_shape::type::points;
-  if (elem_size == 2) shape.type = opengl_shape::type::lines;
-  if (elem_size == 3) shape.type = opengl_shape::type::triangles;
+  if (elem_size == 1) shape.type = Shape::type::points;
+  if (elem_size == 2) shape.type = Shape::type::lines;
+  if (elem_size == 3) shape.type = Shape::type::triangles;
   check_glerror();
 }
 
-void init_glshape(opengl_shape& shape);
-void draw_glshape(const opengl_shape& shape);
-void delete_glshape(opengl_shape& glshape);
+void init_glshape(Shape& shape);
+void draw_glshape(const Shape& shape);
+void delete_glshape(Shape& glshape);
 
-opengl_shape make_glpoints(const vector<vec3f>& positions);
-opengl_shape make_glpolyline(const vector<vec3f>& position,
+Shape make_glpoints(const vector<vec3f>& positions);
+Shape make_glpolyline(const vector<vec3f>& position,
     const vector<vec3f>& normals = {}, float eps = 0.01);
-opengl_shape make_glquad();
-opengl_shape make_glmesh(const vector<vec3i>& triangles,
+Shape make_glquad();
+Shape make_glmesh(const vector<vec3i>& triangles,
     const vector<vec3f>& positions, const vector<vec3f>& normals);
-opengl_shape make_glvector_field(const vector<vec3f>& vector_field,
+Shape make_glvector_field(const vector<vec3f>& vector_field,
     const vector<vec3f>& from, float scale = 0.01);
-opengl_shape make_glvector_field(const vector<vec3f>& vector_field,
+Shape make_glvector_field(const vector<vec3f>& vector_field,
     const vector<vec3i>& triangles, const vector<vec3f>& positions,
     float scale = 0.001);
 
-opengl_camera make_lookat_camera(
+Camera make_lookat_camera(
     const vec3f& from, const vec3f& to, const vec3f& up = {0, 1, 0});
 
-mat4f make_view_matrix(const opengl_camera& camera);
-mat4f make_projection_matrix(const opengl_camera& camera, const vec2i& viewport,
+mat4f make_view_matrix(const Camera& camera);
+mat4f make_projection_matrix(const Camera& camera, const vec2i& viewport,
     float near = 0.01, float far = 10000);
 
 template <typename Type>
-void set_gluniform(
-    const opengl_program& program, const opengl_uniform<Type>& u) {
+void set_gluniform(const Program& program, const Uniform<Type>& u) {
   set_gluniform(program, u.name, u.value);
 }
 
 template <typename Type, typename... Args>
-void set_gluniform(const opengl_program& program, const opengl_uniform<Type>& u,
-    const opengl_uniform<Args>&... args) {
+void set_gluniform(const Program& program, const Uniform<Type>& u,
+    const Uniform<Args>&... args) {
   set_gluniform(program, u);
   set_gluniform(program, args...);
 }
 
 template <typename... Args>
-void draw_glshape(const opengl_shape& shape, const opengl_program& program,
-    const opengl_uniform<Args>&... args) {
+void draw_glshape(
+    const Shape& shape, const Program& program, const Uniform<Args>&... args) {
   bind_glprogram(program);
   set_gluniform(program, args...);
   draw_glshape(shape);
 }
 
-struct opengl_render_target {
-  opengl_texture texture;
-  uint           frame_buffer;
-  uint           render_buffer;
+struct Render_target {
+  Texture texture;
+  uint    frame_buffer;
+  uint    render_buffer;
 };
 
-opengl_render_target make_glrender_target(
+Render_target make_glrender_target(
     const vec2i& size, bool as_float, bool as_srgb, bool linear, bool mipmap);
-void bind_glrender_target(const opengl_render_target& target);
+void bind_glrender_target(const Render_target& target);
 void unbind_glrender_target();
 
 // template <int N>
-// opengl_render_target make_glrender_targets(array<N, opengl_texture>&
+// Render_target make_glrender_targets(array<N, Texture>&
 // textures);
 
 }  // namespace opengl

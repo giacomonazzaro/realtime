@@ -28,7 +28,7 @@ vector<vec3f> compute_normals(
   return normals;
 }
 
-inline opengl_camera make_framing_camera(const vector<vec3f>& positions) {
+inline Camera make_framing_camera(const vector<vec3f>& positions) {
   auto direction = vec3f{0, 1, 2};
   auto box       = bbox3f{};
   for (auto& p : positions) {
@@ -80,10 +80,10 @@ inline void run(const mesh_viewer& viewer, const ioshape& mesh) {
     bind_glrender_target(color_buffer);
     clear_glframebuffer(vec4f(viewer.background,1));
     draw_glshape(shape, shader,
-      opengl_uniform{"color", vec3f{1, 1, 1}},
-      opengl_uniform{"frame", identity4x4f},
-      opengl_uniform{"view", view},
-      opengl_uniform{"projection", projection}
+      Uniform{"color", vec3f{1, 1, 1}},
+      Uniform{"frame", identity4x4f},
+      Uniform{"view", view},
+      Uniform{"projection", projection}
     );
     // clang-format on
 
