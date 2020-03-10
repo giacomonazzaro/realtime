@@ -137,11 +137,9 @@ struct Window {
   Callbacks   callbacks  = {};
   vec4f       background = {0.15f, 0.15f, 0.15f, 1.0f};
 
-  vec2i window_size          = {0, 0};
-  float window_aspect        = 0;
+  vec2i size          = {0, 0};
   vec4i framebuffer_viewport = {0, 0, 0, 0};
   vec2i framebuffer_size     = {0, 0};
-  float framebuffer_aspect   = 0;
   int   widgets_width        = 0;
   bool  widgets_left         = true;
 

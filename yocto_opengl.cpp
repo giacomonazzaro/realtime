@@ -652,32 +652,32 @@ void draw_scene(
 // LOW-LEVEL OPENGL FUNCTIONS
 // -----------------------------------------------------------------------------
 
-void reload_program(Program& program) {
+void reload_program(Rename& program) {
   load_text(program.vertex_filename, program.vertex_code);
   load_text(program.fragment_filename, program.fragment_code);
 }
 
-void load_program(Program& program, const string& vertex_filename,
+void load_program(Rename& program, const string& vertex_filename,
     const string& fragment_filename) {
   program.vertex_filename   = vertex_filename;
   program.fragment_filename = fragment_filename;
   reload_program(program);
 }
 
-Program create_program(const string& vertex_filename,
+Rename create_program(const string& vertex_filename,
     const string& fragment_filename, bool abort_on_error) {
-  Program program;
+  Rename program;
   load_program(program, vertex_filename, fragment_filename);
   init_program(program, abort_on_error);
   return program;
 }
 
-bool init_program(Program& program, bool abort_on_error) {
+bool init_program(Rename& program, bool abort_on_error) {
   return init_program(program, program.vertex_code.c_str(),
       program.fragment_code.c_str(), abort_on_error);
 }
 
-bool init_program(Program& program, const char* vertex, const char* fragment,
+bool init_program(Rename& program, const char* vertex, const char* fragment,
     bool abort_on_error) {
   check_error();
   int  errflags;
@@ -685,12 +685,12 @@ bool init_program(Program& program, const char* vertex, const char* fragment,
 
   // create vertex
   check_error();
-  program.vertex_shader_id = glCreateShader(GL_VERTEX_SHADER);
-  glShaderSource(program.vertex_shader_id, 1, &vertex, NULL);
-  glCompileShader(program.vertex_shader_id);
-  glGetShaderiv(program.vertex_shader_id, GL_COMPILE_STATUS, &errflags);
+  program.vertex_id = glCreateShader(GL_VERTEX_SHADER);
+  glShaderSource(program.vertex_id, 1, &vertex, NULL);
+  glCompileShader(program.vertex_id);
+  glGetShaderiv(program.vertex_id, GL_COMPILE_STATUS, &errflags);
   if (!errflags) {
-    glGetShaderInfoLog(program.vertex_shader_id, 10000, 0, errbuf);
+    glGetShaderInfoLog(program.vertex_id, 10000, 0, errbuf);
     errbuf[6] = '\n';
     printf("\n*** VERTEX SHADER COMPILATION %s\n", errbuf);
     if (abort_on_error) {
@@ -702,12 +702,12 @@ bool init_program(Program& program, const char* vertex, const char* fragment,
 
   // create fragment
   check_error();
-  program.fragment_shader_id = glCreateShader(GL_FRAGMENT_SHADER);
-  glShaderSource(program.fragment_shader_id, 1, &fragment, NULL);
-  glCompileShader(program.fragment_shader_id);
-  glGetShaderiv(program.fragment_shader_id, GL_COMPILE_STATUS, &errflags);
+  program.fragment_id = glCreateShader(GL_FRAGMENT_SHADER);
+  glShaderSource(program.fragment_id, 1, &fragment, NULL);
+  glCompileShader(program.fragment_id);
+  glGetShaderiv(program.fragment_id, GL_COMPILE_STATUS, &errflags);
   if (!errflags) {
-    glGetShaderInfoLog(program.fragment_shader_id, 10000, 0, errbuf);
+    glGetShaderInfoLog(program.fragment_id, 10000, 0, errbuf);
     errbuf[6] = '\n';
     printf("\n*** FRAGMENT SHADER COMPILATION %s\n", errbuf);
     if (abort_on_error) {
@@ -720,13 +720,13 @@ bool init_program(Program& program, const char* vertex, const char* fragment,
   // create program
   check_error();
   program.program_id = glCreateProgram();
-  glAttachShader(program.program_id, program.vertex_shader_id);
-  glAttachShader(program.program_id, program.fragment_shader_id);
+  glAttachShader(program.program_id, program.vertex_id);
+  glAttachShader(program.program_id, program.fragment_id);
   glLinkProgram(program.program_id);
   glValidateProgram(program.program_id);
   glGetProgramiv(program.program_id, GL_LINK_STATUS, &errflags);
   if (!errflags) {
-    glGetShaderInfoLog(program.fragment_shader_id, 10000, 0, errbuf);
+    glGetShaderInfoLog(program.fragment_id, 10000, 0, errbuf);
     //    errbuf[6] = '\n';
     printf("\n*** SHADER LINKING %s\n", errbuf);
     if (abort_on_error) {
@@ -738,26 +738,26 @@ bool init_program(Program& program, const char* vertex, const char* fragment,
   return true;
 }
 
-void delete_program(Program& program) {
+void delete_program(Rename& program) {
   if (!program) return;
   glDeleteProgram(program.program_id);
-  glDeleteShader(program.vertex_shader_id);
-  glDeleteShader(program.fragment_shader_id);
-  program.program_id         = 0;
-  program.vertex_shader_id   = 0;
-  program.fragment_shader_id = 0;
+  glDeleteShader(program.vertex_id);
+  glDeleteShader(program.fragment_id);
+  program.program_id  = 0;
+  program.vertex_id   = 0;
+  program.fragment_id = 0;
 }
 
 void init_texture(Texture& texture, const vec2i& size, bool as_float,
     bool as_srgb, bool linear, bool mipmap) {
   if (texture) delete_texture(texture);
   check_error();
-  glGenTextures(1, &texture.texture_id);
+  glGenTextures(1, &texture.id);
   texture.size     = size;
   texture.mipmap   = mipmap;
   texture.is_srgb  = as_srgb;
   texture.is_float = as_float;
-  glBindTexture(GL_TEXTURE_2D, texture.texture_id);
+  glBindTexture(GL_TEXTURE_2D, texture.id);
   if (as_float) {
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, size.x, size.y, 0, GL_RGBA,
         GL_FLOAT, nullptr);
@@ -784,7 +784,7 @@ void init_texture(Texture& texture, const vec2i& size, bool as_float,
 
 void update_texture(Texture& texture, const image<vec4f>& img, bool mipmap) {
   check_error();
-  glBindTexture(GL_TEXTURE_2D, texture.texture_id);
+  glBindTexture(GL_TEXTURE_2D, texture.id);
   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, img.size().x, img.size().y, GL_RGBA,
       GL_FLOAT, img.data());
   if (mipmap) glGenerateMipmap(GL_TEXTURE_2D);
@@ -794,7 +794,7 @@ void update_texture(Texture& texture, const image<vec4f>& img, bool mipmap) {
 void update_texture_region(Texture& texture, const image<vec4f>& img,
     const image_region& region, bool mipmap) {
   check_error();
-  glBindTexture(GL_TEXTURE_2D, texture.texture_id);
+  glBindTexture(GL_TEXTURE_2D, texture.id);
   auto clipped = image<vec4f>{};
   get_region(clipped, img, region);
   glTexSubImage2D(GL_TEXTURE_2D, 0, region.min.x, region.min.y, region.size().x,
@@ -805,7 +805,7 @@ void update_texture_region(Texture& texture, const image<vec4f>& img,
 
 void update_texture(Texture& texture, const image<vec4b>& img, bool mipmap) {
   check_error();
-  glBindTexture(GL_TEXTURE_2D, texture.texture_id);
+  glBindTexture(GL_TEXTURE_2D, texture.id);
   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, img.size().x, img.size().y, GL_RGBA,
       GL_UNSIGNED_BYTE, img.data());
   if (mipmap) glGenerateMipmap(GL_TEXTURE_2D);
@@ -815,7 +815,7 @@ void update_texture(Texture& texture, const image<vec4b>& img, bool mipmap) {
 void update_texture_region(Texture& texture, const image<vec4b>& img,
     const image_region& region, bool mipmap) {
   check_error();
-  glBindTexture(GL_TEXTURE_2D, texture.texture_id);
+  glBindTexture(GL_TEXTURE_2D, texture.id);
   auto clipped = image<vec4b>{};
   get_region(clipped, img, region);
   glTexSubImage2D(GL_TEXTURE_2D, 0, region.min.x, region.min.y, region.size().x,
@@ -826,21 +826,23 @@ void update_texture_region(Texture& texture, const image<vec4b>& img,
 
 void delete_texture(Texture& texture) {
   if (!texture) return;
-  glDeleteTextures(1, &texture.texture_id);
-  texture.texture_id = 0;
-  texture.size       = zero2i;
+  glDeleteTextures(1, &texture.id);
+  texture.id   = 0;
+  texture.size = zero2i;
 }
 
 template <typename T>
 void init_array_buffer_impl(
-    Arraybuffer& buffer, const vector<T>& array, bool dynamic) {
+    Arraybuffer& buffer, const vector<T>& array, bool dynamic, bool is_index = false) {
   buffer           = Arraybuffer{};
   buffer.num       = size(array);
   buffer.elem_size = sizeof(T);
+  buffer.is_index  = is_index;
   check_error();
-  glGenBuffers(1, &buffer.buffer_id);
-  glBindBuffer(GL_ARRAY_BUFFER, buffer.buffer_id);
-  glBufferData(GL_ARRAY_BUFFER, size(array) * sizeof(T), array.data(),
+  glGenBuffers(1, &buffer.id);
+  auto flag = is_index ? GL_ELEMENT_ARRAY_BUFFER : GL_ARRAY_BUFFER;
+  glBindBuffer(flag, buffer.id);
+  glBufferData(flag, size(array) * sizeof(T), array.data(),
       (dynamic) ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
   check_error();
 }
@@ -861,46 +863,23 @@ void init_arraybuffer(
     Arraybuffer& buffer, const vector<vec4f>& data, bool dynamic) {
   init_array_buffer_impl(buffer, data, dynamic);
 }
+void init_arraybuffer(
+    Arraybuffer& buffer, const vector<vec2i>& data, bool dynamic) {
+  init_array_buffer_impl(buffer, data, dynamic, true);
+}
+void init_arraybuffer(
+    Arraybuffer& buffer, const vector<vec3i>& data, bool dynamic) {
+  init_array_buffer_impl(buffer, data, dynamic, true);
+}
+void init_arraybuffer(
+    Arraybuffer& buffer, const vector<vec4i>& data, bool dynamic) {
+  init_array_buffer_impl(buffer, data, dynamic, true);
+}
 
 void delete_arraybuffer(Arraybuffer& buffer) {
   if (!buffer) return;
-  glDeleteBuffers(1, &buffer.buffer_id);
-  buffer.buffer_id = 0;
-  buffer.elem_size = 0;
-  buffer.num       = 0;
-}
-
-template <typename T>
-void init_elementbuffer_impl(
-    Elementbuffer& buffer, const vector<T>& array, bool dynamic) {
-  buffer           = Elementbuffer{};
-  buffer.num       = size(array);
-  buffer.elem_size = sizeof(T);
-  check_error();
-  glGenBuffers(1, &buffer.buffer_id);
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.buffer_id);
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER, size(array) * sizeof(T), array.data(),
-      (dynamic) ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
-  check_error();
-}
-
-void init_elementbuffer(
-    Elementbuffer& buffer, const vector<int>& data, bool dynamic) {
-  init_elementbuffer_impl(buffer, data, dynamic);
-}
-void init_elementbuffer(
-    Elementbuffer& buffer, const vector<vec2i>& data, bool dynamic) {
-  init_elementbuffer_impl(buffer, data, dynamic);
-}
-void init_elementbuffer(
-    Elementbuffer& buffer, const vector<vec3i>& data, bool dynamic) {
-  init_elementbuffer_impl(buffer, data, dynamic);
-}
-
-void delete_elementbuffer(Elementbuffer& buffer) {
-  if (!buffer) return;
-  glDeleteBuffers(1, &buffer.buffer_id);
-  buffer.buffer_id = 0;
+  glDeleteBuffers(1, &buffer.id);
+  buffer.id        = 0;
   buffer.elem_size = 0;
   buffer.num       = 0;
 }
@@ -927,10 +906,10 @@ bool bind_Vertex_array_object(uint vao) {
   return true;
 }
 
-void bind_program(const Program& program) { glUseProgram(program.program_id); }
+void bind_program(const Rename& program) { glUseProgram(program.program_id); }
 void unbind_Program() { glUseProgram(0); }
 
-int get_uniform_location(const Program& program, const char* name) {
+int get_uniform_location(const Rename& program, const char* name) {
   return glGetUniformLocation(program.program_id, name);
 }
 
@@ -1014,22 +993,22 @@ void set_uniform(int location, const vec3f* values, int num_values) {
 void set_uniform_texture(int location, const Texture& texture, int unit) {
   check_error();
   glActiveTexture(GL_TEXTURE0 + unit);
-  glBindTexture(GL_TEXTURE_2D, texture.texture_id);
+  glBindTexture(GL_TEXTURE_2D, texture.id);
   glUniform1i(location, unit);
   check_error();
 }
 
-void set_uniform_texture(const Program& program, const char* name,
-    const Texture& texture, int unit) {
+void set_uniform_texture(
+    const Rename& program, const char* name, const Texture& texture, int unit) {
   set_uniform_texture(get_uniform_location(program, name), texture, unit);
 }
 
 void set_uniform_texture(
     int location, int locatiom_on, const Texture& texture, int unit) {
   check_error();
-  if (texture.texture_id) {
+  if (texture.id) {
     glActiveTexture(GL_TEXTURE0 + unit);
-    glBindTexture(GL_TEXTURE_2D, texture.texture_id);
+    glBindTexture(GL_TEXTURE_2D, texture.id);
     glUniform1i(location, unit);
     glUniform1i(locatiom_on, 1);
   } else {
@@ -1038,20 +1017,20 @@ void set_uniform_texture(
   check_error();
 }
 
-void set_uniform_texture(const Program& program, const char* name,
+void set_uniform_texture(const Rename& program, const char* name,
     const char* name_on, const Texture& texture, int unit) {
   set_uniform_texture(get_uniform_location(program, name),
       get_uniform_location(program, name_on), texture, unit);
 }
 
-int get_vertexattrib_location(const Program& program, const char* name) {
+int get_vertexattrib_location(const Rename& program, const char* name) {
   return glGetAttribLocation(program.program_id, name);
 }
 
 void set_vertexattrib(int location, const Arraybuffer& buffer, int elem_size) {
   check_error();
-  assert(buffer.buffer_id);
-  glBindBuffer(GL_ARRAY_BUFFER, buffer.buffer_id);
+  assert(buffer.id);
+  glBindBuffer(GL_ARRAY_BUFFER, buffer.id);
   glEnableVertexAttribArray(location);
   glVertexAttribPointer(location, elem_size, GL_FLOAT, false, 0, nullptr);
   check_error();
@@ -1059,8 +1038,8 @@ void set_vertexattrib(int location, const Arraybuffer& buffer, int elem_size) {
 
 void set_vertexattrib(int location, const Arraybuffer& buffer, float value) {
   check_error();
-  if (buffer.buffer_id) {
-    glBindBuffer(GL_ARRAY_BUFFER, buffer.buffer_id);
+  if (buffer.id) {
+    glBindBuffer(GL_ARRAY_BUFFER, buffer.id);
     glEnableVertexAttribArray(location);
     glVertexAttribPointer(location, 1, GL_FLOAT, false, 0, nullptr);
   } else {
@@ -1072,8 +1051,8 @@ void set_vertexattrib(int location, const Arraybuffer& buffer, float value) {
 void set_vertexattrib(
     int location, const Arraybuffer& buffer, const vec2f& value) {
   check_error();
-  if (buffer.buffer_id) {
-    glBindBuffer(GL_ARRAY_BUFFER, buffer.buffer_id);
+  if (buffer.id) {
+    glBindBuffer(GL_ARRAY_BUFFER, buffer.id);
     glEnableVertexAttribArray(location);
     glVertexAttribPointer(location, 2, GL_FLOAT, false, 0, nullptr);
   } else {
@@ -1085,8 +1064,8 @@ void set_vertexattrib(
 void set_vertexattrib(
     int location, const Arraybuffer& buffer, const vec3f& value) {
   check_error();
-  if (buffer.buffer_id) {
-    glBindBuffer(GL_ARRAY_BUFFER, buffer.buffer_id);
+  if (buffer.id) {
+    glBindBuffer(GL_ARRAY_BUFFER, buffer.id);
     glEnableVertexAttribArray(location);
     glVertexAttribPointer(location, 3, GL_FLOAT, false, 0, nullptr);
   } else {
@@ -1098,8 +1077,8 @@ void set_vertexattrib(
 void set_vertexattrib(
     int location, const Arraybuffer& buffer, const vec4f& value) {
   check_error();
-  if (buffer.buffer_id) {
-    glBindBuffer(GL_ARRAY_BUFFER, buffer.buffer_id);
+  if (buffer.id) {
+    glBindBuffer(GL_ARRAY_BUFFER, buffer.id);
     glEnableVertexAttribArray(location);
     glVertexAttribPointer(location, 4, GL_FLOAT, false, 0, nullptr);
   } else {
@@ -1108,41 +1087,44 @@ void set_vertexattrib(
   check_error();
 }
 
-void draw_points(const Elementbuffer& buffer, int num) {
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.buffer_id);
-  glDrawElements(GL_POINTS, num, GL_UNSIGNED_INT, nullptr);
+void draw_points(const Arraybuffer& buffer) {
+    check_error();
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.id);
+  glDrawElements(GL_POINTS, buffer.num, GL_UNSIGNED_INT, nullptr);
+    check_error();
 }
 
-void draw_lines(const Elementbuffer& buffer, int num) {
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.buffer_id);
-  glDrawElements(GL_LINES, num * 2, GL_UNSIGNED_INT, nullptr);
+void draw_lines(const Arraybuffer& buffer) {
+    check_error();
+glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.id);
+  glDrawElements(GL_LINES, buffer.num * 2, GL_UNSIGNED_INT, nullptr);
+    check_error();
 }
 
-void draw_triangles(const Elementbuffer& buffer, int num) {
+void draw_triangles(const Arraybuffer& buffer) {
   check_error();
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.buffer_id);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.id);
+  glDrawElements(GL_TRIANGLES, buffer.num * 3, GL_UNSIGNED_INT, nullptr);
   check_error();
-  glDrawElements(GL_TRIANGLES, num * 3, GL_UNSIGNED_INT, nullptr);
-  check_error();
 }
 
-void draw_points(const Arraybuffer& buffer, int num) {
-  glDrawArrays(GL_POINTS, 0, num);
+void draw_point_strip(const Arraybuffer& buffer) {
+  glDrawArrays(GL_POINTS, 0, buffer.num);
 }
 
-void draw_lines(const Arraybuffer& buffer, int num) {
-  glDrawArrays(GL_LINE_STRIP, 0, num);
+void draw_line_strip(const Arraybuffer& buffer) {
+  glDrawArrays(GL_LINE_STRIP, 0, buffer.num);
 }
 
-void draw_triangles(const Arraybuffer& buffer, int num) {
-  glDrawArrays(GL_TRIANGLE_STRIP, 0, num);
+void draw_triangle_strip(const Arraybuffer& buffer) {
+  glDrawArrays(GL_TRIANGLE_STRIP, 0, buffer.num);
 }
 
 void draw_image(const Texture& texture, int win_width, int win_height,
     const vec2f& image_center, float image_scale) {
-  static Program       gl_prog      = {};
+  static Rename        gl_prog      = {};
   static Arraybuffer   gl_texcoord  = {};
-  static Elementbuffer gl_triangles = {};
+  static Arraybuffer gl_triangles = {};
 
   // initialization
   if (!gl_prog) {
@@ -1172,7 +1154,7 @@ void draw_image(const Texture& texture, int win_width, int win_height,
     init_program(gl_prog, vert, frag);
     init_arraybuffer(
         gl_texcoord, vector<vec2f>{{0, 0}, {0, 1}, {1, 1}, {1, 0}}, false);
-    init_elementbuffer(
+    init_arraybuffer(
         gl_triangles, vector<vec3i>{{0, 1, 2}, {0, 2, 3}}, false);
   }
 
@@ -1187,7 +1169,7 @@ void draw_image(const Texture& texture, int win_width, int win_height,
   set_uniform(gl_prog, "image_center", image_center);
   set_uniform(gl_prog, "image_scale", image_scale);
   set_vertexattrib(gl_prog, "texcoord", gl_texcoord, zero2f);
-  draw_triangles(gl_triangles, 2);
+  draw_triangles(gl_triangles);
   unbind_Program();
   check_error();
 }
@@ -1195,9 +1177,9 @@ void draw_image(const Texture& texture, int win_width, int win_height,
 void draw_image_background(const Texture& texture, int win_width,
     int win_height, const vec2f& image_center, float image_scale,
     float border_size) {
-  static Program       gl_prog      = {};
+  static Rename        gl_prog      = {};
   static Arraybuffer   gl_texcoord  = {};
-  static Elementbuffer gl_triangles = {};
+  static Arraybuffer gl_triangles = {};
 
   // initialization
   if (!gl_prog) {
@@ -1233,7 +1215,7 @@ void draw_image_background(const Texture& texture, int win_width,
     init_program(gl_prog, vert, frag);
     init_arraybuffer(
         gl_texcoord, vector<vec2f>{{0, 0}, {0, 1}, {1, 1}, {1, 0}}, false);
-    init_elementbuffer(
+    init_arraybuffer(
         gl_triangles, vector<vec3i>{{0, 1, 2}, {0, 2, 3}}, false);
   }
 
@@ -1248,7 +1230,7 @@ void draw_image_background(const Texture& texture, int win_width,
   set_uniform(gl_prog, "image_center", image_center);
   set_uniform(gl_prog, "image_scale", image_scale);
   set_vertexattrib(gl_prog, "texcoord", gl_texcoord, zero2f);
-  draw_triangles(gl_triangles, 2);
+  draw_triangles(gl_triangles);
   unbind_Program();
 }
 
@@ -1354,11 +1336,11 @@ void draw_shape(const Shape& shape) {
   if (!shape.elements) {
     auto& positions = shape.vertex_attributes[0];
     if (shape.type == Shape::type::points) {
-      draw_points(positions, positions.num);
+      draw_point_strip(positions);
     } else if (shape.type == Shape::type::lines) {
-      draw_lines(positions, positions.num);
+      draw_line_strip(positions);
     } else if (shape.type == Shape::type::triangles) {
-      draw_triangles(positions, positions.num);
+      draw_triangle_strip(positions);
     }
   }
   // draw points, lines or triangles
@@ -1366,11 +1348,11 @@ void draw_shape(const Shape& shape) {
     auto& elements = shape.elements;
     // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elements.buffer_id);
     if (shape.type == Shape::type::points) {
-      draw_points(elements, elements.num);
+      draw_points(elements);
     } else if (shape.type == Shape::type::lines) {
-      draw_lines(elements, elements.num);
+      draw_lines(elements);
     } else if (shape.type == Shape::type::triangles) {
-      draw_triangles(elements, elements.num);
+      draw_triangles(elements);
     }
   }
   check_error();
@@ -1380,7 +1362,7 @@ void delete_shape(Shape& glshape) {
   for (auto& attribute : glshape.vertex_attributes) {
     delete_arraybuffer(attribute);
   }
-  delete_elementbuffer(glshape.elements);
+  delete_arraybuffer(glshape.elements);
   delete_Vertex_array_object(glshape.vao);
 }
 
@@ -1412,7 +1394,7 @@ Render_target make_render_target(
   glBindFramebuffer(GL_FRAMEBUFFER, target.frame_buffer);
 
   // create a color attachment texture
-  auto& texture       = target.texture.texture_id;
+  auto& texture       = target.texture.id;
   target.texture.size = size;
   glGenTextures(1, &texture);
   glBindTexture(GL_TEXTURE_2D, texture);

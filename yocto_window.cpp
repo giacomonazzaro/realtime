@@ -138,8 +138,8 @@ void init_window(Window& win, const vec2i& size, const string& title) {
   glfwSetWindowSizeCallback(
       win.glfw, [](GLFWwindow* glfw, int width, int height) {
         auto win = (Window*)glfwGetWindowUserPointer(glfw);
-        glfwGetWindowSize(win->glfw, &win->window_size.x, &win->window_size.y);
-        if (win->widgets_width) win->window_size.x -= win->widgets_width;
+        glfwGetWindowSize(win->glfw, &win->size.x, &win->size.y);
+        if (win->widgets_width) win->size.x -= win->widgets_width;
         glfwGetFramebufferSize(win->glfw, &win->framebuffer_viewport.z,
             &win->framebuffer_viewport.w);
         win->framebuffer_viewport.x = 0;
@@ -204,9 +204,9 @@ void run_draw_loop(Window& win, std::function<void(Window&)> draw, bool wait) {
 
 vec2f get_mouse_pos_normalized(const Window& win) {
   auto& pos    = win.input.mouse_pos;
-  auto  size   = win.window_size;
+  auto  size   = win.size;
   auto  result = vec2f{2 * (pos.x / size.x) - 1, 1 - 2 * (pos.y / size.y)};
-  result.x *= win.window_aspect;
+  result.x *= float(win.size.x) / float(win.size.y);
   return result;
 }
 
@@ -216,8 +216,8 @@ bool is_key_pressed(const Window& win, Key key) {
 
 void update_window_size(Window& win) {
   auto& glfw = win.glfw;
-  glfwGetWindowSize(glfw, &win.window_size.x, &win.window_size.y);
-  if (win.widgets_width) win.window_size.x -= win.widgets_width;
+  glfwGetWindowSize(glfw, &win.size.x, &win.size.y);
+  if (win.widgets_width) win.size.x -= win.widgets_width;
   glfwGetFramebufferSize(
       glfw, &win.framebuffer_viewport.z, &win.framebuffer_viewport.w);
   win.framebuffer_viewport.x = 0;
@@ -230,12 +230,9 @@ void update_window_size(Window& win) {
     win.framebuffer_viewport.z -= offset;
     if (win.widgets_left) win.framebuffer_viewport.x += offset;
   }
-  win.window_aspect    = float(win.window_size.x) / float(win.window_size.y);
   win.framebuffer_size = {
       win.framebuffer_viewport.z - win.framebuffer_viewport.x,
       win.framebuffer_viewport.w - win.framebuffer_viewport.y};
-  win.framebuffer_aspect = float(win.framebuffer_size.x) /
-                           float(win.framebuffer_size.y);
 }
 
 void update_input(Input& input, const Window& win) {
