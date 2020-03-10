@@ -65,16 +65,14 @@ inline void run(const mesh_viewer& viewer, const ioshape& mesh) {
   auto quad        = make_quad();
   auto quad_shader = create_program(
       "shaders/quad.vert", "shaders/quad-texture.frag", true);
-
-  auto color_buffer = make_render_target(
-      2 * viewer.viewport, false, false, true, true);
-  auto color_normal = make_render_target(
-      2 * viewer.viewport, false, false, true, true);
+  auto si           = win.framebuffer_size;
+  auto color_buffer = make_render_target(si, false, false, true, true);
+  auto color_normal = make_render_target(si, false, false, true, true);
 
   // auto image  = load_image("/Users/nazzaro/Desktop/img.png");
   // init_texture(target.texture, image, true, true, true);
 
-  win.callbacks.draw = [&](Window& win, const Input&) {
+  win.callbacks.draw = [&](Window& win) {
     update_camera(camera.frame, camera.focus, win);
 
     auto view       = make_view_matrix(camera);

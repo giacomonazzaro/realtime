@@ -139,21 +139,19 @@ void init_window(Window& win, const vec2i& size, const string& title) {
   glfwSetWindowSizeCallback(
       win.glfw, [](GLFWwindow* glfw, int width, int height) {
         auto win = (Window*)glfwGetWindowUserPointer(glfw);
-        glfwGetWindowSize(
-            win->glfw, &win->input.window_size.x, &win->input.window_size.y);
-        if (win->widgets_width) win->input.window_size.x -= win->widgets_width;
-        glfwGetFramebufferSize(win->glfw, &win->input.framebuffer_viewport.z,
-            &win->input.framebuffer_viewport.w);
-        win->input.framebuffer_viewport.x = 0;
-        win->input.framebuffer_viewport.y = 0;
+        glfwGetWindowSize(win->glfw, &win->window_size.x, &win->window_size.y);
+        if (win->widgets_width) win->window_size.x -= win->widgets_width;
+        glfwGetFramebufferSize(win->glfw, &win->framebuffer_viewport.z,
+            &win->framebuffer_viewport.w);
+        win->framebuffer_viewport.x = 0;
+        win->framebuffer_viewport.y = 0;
         if (win->widgets_width) {
           auto win_size = zero2i;
           glfwGetWindowSize(win->glfw, &win_size.x, &win_size.y);
           auto offset = (int)(win->widgets_width *
-                              (float)win->input.framebuffer_viewport.z /
-                              win_size.x);
-          win->input.framebuffer_viewport.z -= offset;
-          if (win->widgets_left) win->input.framebuffer_viewport.x += offset;
+                              (float)win->framebuffer_viewport.z / win_size.x);
+          win->framebuffer_viewport.z -= offset;
+          if (win->widgets_left) win->framebuffer_viewport.x += offset;
         }
       });
 
@@ -175,6 +173,7 @@ void init_window(Window& win, const vec2i& size, const string& title) {
 #endif
     ImGui::StyleColorsDark();
   }
+  update_input(win);
 
   // call init callback
   if (win.callbacks.init) win.init();
@@ -200,8 +199,8 @@ void poll_events(const Window& win, bool wait) {
 void run_draw_loop(Window& win, bool wait) {
   while (!should_window_close(win)) {
     update_input(win);
-    if (win.callbacks.draw) win.callbacks.draw(win, win.input);
-    if (win.callbacks.widgets) win.callbacks.widgets(win, win.input);
+    win.draw();
+    win.gui();
     swap_buffers(win);
     poll_events(win, wait);
   }
@@ -209,14 +208,38 @@ void run_draw_loop(Window& win, bool wait) {
 
 vec2f get_mouse_pos_normalized(const Window& win) {
   auto& pos    = win.input.mouse_pos;
-  auto  size   = win.input.window_size;
+  auto  size   = win.window_size;
   auto  result = vec2f{2 * (pos.x / size.x) - 1, 1 - 2 * (pos.y / size.y)};
-  result.x *= win.input.window_aspect;
+  result.x *= win.window_aspect;
   return result;
 }
 
 bool is_key_pressed(const Window& win, Key key) {
   return glfwGetKey(win.glfw, (int)key) == GLFW_PRESS;
+}
+
+void update_window_size(Window& win) {
+  auto& glfw = win.glfw;
+  glfwGetWindowSize(glfw, &win.window_size.x, &win.window_size.y);
+  if (win.widgets_width) win.window_size.x -= win.widgets_width;
+  glfwGetFramebufferSize(
+      glfw, &win.framebuffer_viewport.z, &win.framebuffer_viewport.w);
+  win.framebuffer_viewport.x = 0;
+  win.framebuffer_viewport.y = 0;
+  if (win.widgets_width) {
+    auto win_size = zero2i;
+    glfwGetWindowSize(glfw, &win_size.x, &win_size.y);
+    auto offset = (int)(win.widgets_width * (float)win.framebuffer_viewport.z /
+                        win_size.x);
+    win.framebuffer_viewport.z -= offset;
+    if (win.widgets_left) win.framebuffer_viewport.x += offset;
+  }
+  win.window_aspect    = float(win.window_size.x) / float(win.window_size.y);
+  win.framebuffer_size = {
+      win.framebuffer_viewport.z - win.framebuffer_viewport.x,
+      win.framebuffer_viewport.w - win.framebuffer_viewport.y};
+  win.framebuffer_aspect = float(win.framebuffer_size.x) /
+                           float(win.framebuffer_size.y);
 }
 
 void update_input(Window& win) {
@@ -240,31 +263,14 @@ void update_input(Window& win) {
   win.input.modifier_ctrl =
       glfwGetKey(glfw, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS ||
       glfwGetKey(glfw, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS;
-  glfwGetWindowSize(glfw, &win.input.window_size.x, &win.input.window_size.y);
-  if (win.widgets_width) win.input.window_size.x -= win.widgets_width;
-  glfwGetFramebufferSize(glfw, &win.input.framebuffer_viewport.z,
-      &win.input.framebuffer_viewport.w);
-  win.input.framebuffer_viewport.x = 0;
-  win.input.framebuffer_viewport.y = 0;
+
   if (win.widgets_width) {
-    auto win_size = zero2i;
-    glfwGetWindowSize(glfw, &win_size.x, &win_size.y);
-    auto offset = (int)(win.widgets_width *
-                        (float)win.input.framebuffer_viewport.z / win_size.x);
-    win.input.framebuffer_viewport.z -= offset;
-    if (win.widgets_left) win.input.framebuffer_viewport.x += offset;
+    auto io                 = &ImGui::GetIO();
+    win.input.is_gui_active = io->WantTextInput || io->WantCaptureMouse ||
+                              io->WantCaptureKeyboard;
   }
-  win.input.window_aspect = float(win.input.window_size.x) /
-                            float(win.input.window_size.y);
-  win.input.framebuffer_aspect = float(win.input.framebuffer_viewport.z -
-                                       win.input.framebuffer_viewport.x) /
-                                 float(win.input.framebuffer_viewport.w -
-                                       win.input.framebuffer_viewport.y);
-  if (win.widgets_width) {
-    auto io                  = &ImGui::GetIO();
-    win.input.widgets_active = io->WantTextInput || io->WantCaptureMouse ||
-                               io->WantCaptureKeyboard;
-  }
+
+  update_window_size(win);
 
   // time
   win.input.clock_last = win.input.clock_now;

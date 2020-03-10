@@ -94,74 +94,74 @@ enum struct Key : int {
 
 // Input state
 struct Input {
-  bool     mouse_left           = false;  // left button
-  bool     mouse_right          = false;  // right button
-  bool     mouse_middle         = false;  // middle button
-  vec2f    mouse_pos            = {};     // position excluding widgets
-  vec2f    mouse_last           = {};  // last mouse position excluding widgets
-  vec2f    mouse_delta          = {};  // last mouse delta excluding widgets
-  bool     modifier_alt         = false;         // alt modifier
-  bool     modifier_ctrl        = false;         // ctrl modifier
-  bool     modifier_shift       = false;         // shift modifier
-  bool     widgets_active       = false;         // widgets are active
-  uint64_t clock_now            = 0;             // clock now
-  uint64_t clock_last           = 0;             // clock last
-  double   time_now             = 0;             // time now
-  double   time_delta           = 0;             // time delta
-  vec2i    window_size          = {0, 0};        // window size
-  float    window_aspect        = 0;             // window aspect ratio
-  vec4i    framebuffer_viewport = {0, 0, 0, 0};  // framebuffer viewport
-  float    framebuffer_aspect   = 0;             // framebuffer aspect ratio
+  bool     mouse_left     = false;  // left button
+  bool     mouse_right    = false;  // right button
+  bool     mouse_middle   = false;  // middle button
+  vec2f    mouse_pos      = {};     // position excluding gui
+  vec2f    mouse_last     = {};     // last mouse position excluding gui
+  vec2f    mouse_delta    = {};     // last mouse delta excluding gui
+  bool     modifier_alt   = false;  // alt modifier
+  bool     modifier_ctrl  = false;  // ctrl modifier
+  bool     modifier_shift = false;  // shift modifier
+  bool     is_gui_active  = false;  // gui is active
+  uint64_t clock_now      = 0;      // clock now
+  uint64_t clock_last     = 0;      // clock last
+  double   time_now       = 0;      // time now
+  double   time_delta     = 0;      // time delta
 };
 
 struct Window;
 
 struct Callbacks {
   // Called after opengl is initialized
-  function<void(Window&, const Input&)> init;
+  function<void(Window&)> init = [](Window&) {};
 
   // Called at each frame
-  function<void(Window&, const Input&)> draw;
+  function<void(Window&)> draw = [](Window&) {};
+
+  // Called after draw for gui
+  function<void(Window&)> gui = [](Window&) {};
 
   // Called when the contents of a window is damaged and needs to be refreshed
-  function<void(Window&, const Input&)> refresh;
-
-  // Called after draw for widgets
-  function<void(Window&, const Input&)> widgets;
+  function<void(Window&)> refresh;
 
   // Called when drag and dropping files onto window.
-  function<void(Window&, const Input&, const vector<string>&)> drop;
+  function<void(Window&, const vector<string>&)> drop;
 
   // Called when a key is pressed or release.
-  function<void(Window&, const Input&, int key, bool pressed)> key;
+  function<void(Window&, int key, bool pressed)> key;
 
   // Called when a mouse button is pressed or release.
-  function<void(Window&, const Input&, bool left, bool pressed)> click;
+  function<void(Window&, bool left, bool pressed)> click;
 
   // Called when scroll is preformed.
-  function<void(Window&, const Input&, float amount)> scroll;
+  function<void(Window&, float amount)> scroll;
 };
 
 // OpenGL window wrapper
 struct Window {
-  GLFWwindow* glfw          = nullptr;
-  string      title         = "";
-  Callbacks   callbacks     = {};
-  int         widgets_width = 0;
-  bool        widgets_left  = true;
-  Input       input         = {};
-  vec4f       background    = {0.15f, 0.15f, 0.15f, 1.0f};
+  string      title      = "";
+  GLFWwindow* glfw       = nullptr;
+  Input       input      = {};
+  Callbacks   callbacks  = {};
+  vec4f       background = {0.15f, 0.15f, 0.15f, 1.0f};
 
-  // clang-format off
-  void init() { callbacks.init(*this, input); }
-  void draw() { callbacks.draw(*this, input); }
-  void refresh() { callbacks.refresh(*this, input); }
-  void widgets() { callbacks.widgets(*this, input); }
-  void drop(const vector<string>& names) { callbacks.drop(*this, input, names); }
-  void key(int key, bool pressed) { callbacks.key(*this, input, key, pressed); }
-  void click(bool left, bool pressed) { callbacks.click(*this,  input, left, pressed); }
-  void scroll(float amount) { callbacks.scroll(*this, input, amount); }
-  // clang-format on
+  vec2i window_size          = {0, 0};
+  float window_aspect        = 0;
+  vec4i framebuffer_viewport = {0, 0, 0, 0};
+  vec2i framebuffer_size     = {0, 0};
+  float framebuffer_aspect   = 0;
+  int   widgets_width        = 0;
+  bool  widgets_left         = true;
+
+  void init() { callbacks.init(*this); }
+  void draw() { callbacks.draw(*this); }
+  void gui() { callbacks.gui(*this); }
+  void refresh() { callbacks.refresh(*this); }
+  void drop(const vector<string>& names) { callbacks.drop(*this, names); }
+  void key(int key, bool pressed) { callbacks.key(*this, key, pressed); }
+  void click(bool left, bool pressed) { callbacks.click(*this, left, pressed); }
+  void scroll(float amount) { callbacks.scroll(*this, amount); }
 };
 
 void init_window(Window& win, const vec2i& size, const string& title);
