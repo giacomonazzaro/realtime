@@ -75,11 +75,6 @@ struct opengl_shape {
   type type = type::triangles;
 };
 
-struct opengl_drawable {
-  opengl_shape*   shape;
-  opengl_program* program;
-};
-
 template <typename Type>
 struct opengl_uniform {
   const char* name;
@@ -441,14 +436,18 @@ void draw_glshape(const opengl_shape& shape, const opengl_program& program,
 
 struct opengl_render_target {
   opengl_texture texture;
-  uint           framebuffer;
-  uint           renderbuffer;
+  uint           frame_buffer;
+  uint           render_buffer;
 };
 
 opengl_render_target make_glrender_target(
     const vec2i& size, bool as_float, bool as_srgb, bool linear, bool mipmap);
 void bind_glrender_target(const opengl_render_target& target);
 void unbind_glrender_target();
+
+// template <int N>
+// opengl_render_target make_glrender_targets(array<N, opengl_texture>&
+// textures);
 
 }  // namespace opengl
 

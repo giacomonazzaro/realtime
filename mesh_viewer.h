@@ -57,12 +57,18 @@ inline void run(const mesh_viewer& viewer, const ioshape& mesh) {
   // Init shader.
   auto shader = create_glprogram(
       viewer.vertex_filename, viewer.fragment_filename, true);
+  auto normal_shader = create_glprogram(
+      viewer.vertex_filename, "shaders/mesh_normals.frag", true);
+
   auto quad        = make_glquad();
   auto quad_shader = create_glprogram(
       "shaders/quad.vert", "shaders/quad-texture.frag", true);
 
-  auto target = make_glrender_target(
-      2 * viewer.viewport, false, true, true, true);
+  auto color_buffer = make_glrender_target(
+      2 * viewer.viewport, false, false, true, true);
+  auto color_normal = make_glrender_target(
+      2 * viewer.viewport, false, false, true, true);
+
   // auto image  = load_image("/Users/nazzaro/Desktop/img.png");
   // init_gltexture(target.texture, image, true, true, true);
 
@@ -71,7 +77,7 @@ inline void run(const mesh_viewer& viewer, const ioshape& mesh) {
     auto projection = make_projection_matrix(camera, viewer.viewport);
 
     // clang-format off
-    bind_glrender_target(target);
+    bind_glrender_target(color_buffer);
     clear_glframebuffer(vec4f(viewer.background,1));
     draw_glshape(shape, shader,
       opengl_uniform{"color", vec3f{1, 1, 1}},
@@ -84,7 +90,7 @@ inline void run(const mesh_viewer& viewer, const ioshape& mesh) {
     unbind_glrender_target();
     clear_glframebuffer(vec4f(1, 1, 1, 1));
     bind_glprogram(quad_shader);
-    set_gluniform_texture(quad_shader, "color_tex", target.texture, 0);
+    set_gluniform_texture(quad_shader, "color_tex", color_buffer.texture, 0);
     set_gluniform(quad_shader, "color", vec3f{1, 1, 1});
     draw_glshape(quad);
   };
