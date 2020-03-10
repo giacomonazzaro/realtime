@@ -6,11 +6,11 @@ using namespace yocto;
 using namespace opengl;
 
 struct mesh_viewer {
-  vec2i            viewport          = {500, 500};
-  vec3f            background        = {0, 0, 0};
-  string           vertex_filename   = "shaders/mesh.vert";
-  string           fragment_filename = "shaders/mesh.frag";
-  opengl_callbacks callbacks         = {};
+  vec2i     viewport          = {500, 500};
+  vec3f     background        = {0, 0, 0};
+  string    vertex_filename   = "shaders/mesh.vert";
+  string    fragment_filename = "shaders/mesh.frag";
+  Callbacks callbacks         = {};
 };
 
 vector<vec3f> compute_normals(
@@ -41,7 +41,7 @@ inline Camera make_framing_camera(const vector<vec3f>& positions) {
 
 inline void run(const mesh_viewer& viewer, const ioshape& mesh) {
   // Init window.
-  auto win      = opengl_window();
+  auto win      = Window();
   win.callbacks = std::move(viewer.callbacks);
   init_glwindow(win, viewer.viewport, "mesh viewer");
 
@@ -72,7 +72,7 @@ inline void run(const mesh_viewer& viewer, const ioshape& mesh) {
   // auto image  = load_image("/Users/nazzaro/Desktop/img.png");
   // init_gltexture(target.texture, image, true, true, true);
 
-  win.callbacks.draw = [&](opengl_window& win, const opengl_input&) {
+  win.callbacks.draw = [&](Window& win, const Input&) {
     auto view       = make_view_matrix(camera);
     auto projection = make_projection_matrix(camera, viewer.viewport);
 
