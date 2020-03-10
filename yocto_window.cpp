@@ -21,7 +21,7 @@
 #define CUTE_FILES_IMPLEMENTATION
 #include "ext/cute_files.h"
 
-namespace yocto {
+namespace opengl {
 
 void update_camera(frame3f& frame, float& focus, const Window& win) {
   auto last_pos    = win.input.mouse_last;
@@ -760,13 +760,13 @@ bool draw_glhdrcoloredit(const Window& win, const char* lbl, vec3f& value) {
   auto scale    = max(color);
   if (scale > 1) {
     color /= scale;
-    exposure = log2(scale);
+    exposure = yocto::log2(scale);
   }
   auto edit_exposure = draw_glslider(
       win, (lbl + " [exp]"s).c_str(), exposure, 0, 10);
   auto edit_color = draw_glcoloredit(win, (lbl + " [col]"s).c_str(), color);
   if (edit_exposure || edit_color) {
-    value = color * exp2(exposure);
+    value = color * yocto::exp2(exposure);
     return true;
   } else {
     return false;
@@ -778,13 +778,13 @@ bool draw_glhdrcoloredit(const Window& win, const char* lbl, vec4f& value) {
   auto scale    = max(xyz(color));
   if (scale > 1) {
     xyz(color) /= scale;
-    exposure = log2(scale);
+    exposure = yocto::log2(scale);
   }
   auto edit_exposure = draw_glslider(
       win, (lbl + " [exp]"s).c_str(), exposure, 0, 10);
   auto edit_color = draw_glcoloredit(win, (lbl + " [col]"s).c_str(), color);
   if (edit_exposure || edit_color) {
-    xyz(value) = xyz(color) * exp2(exposure);
+    xyz(value) = xyz(color) * yocto::exp2(exposure);
     value.w    = color.w;
     return true;
   } else {
@@ -1015,4 +1015,4 @@ void draw_gllog(const Window& win) {
 //       (double)(win->input.clock_now - win->input.clock_last) / 1000000000.0;
 // }
 
-}  // namespace yocto
+}  // namespace opengl

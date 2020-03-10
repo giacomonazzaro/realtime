@@ -10,7 +10,8 @@ using std::function;
 // forward declaration
 struct GLFWwindow;
 
-namespace yocto {
+namespace opengl {
+using namespace yocto;
 
 enum struct Key : int {
   // For printable keys, just use the constructor, like Key('*')
@@ -189,12 +190,9 @@ bool draw_loop(Window& win, bool wait = false);
 
 void update_camera(frame3f& frame, float& focus, const Window& win);
 
-}  // namespace yocto
-
 // -----------------------------------------------------------------------------
 // OPENGL WIDGETS
 // -----------------------------------------------------------------------------
-namespace yocto {
 
 void init_glwidgets(Window& win, int width = 320, bool left = true);
 bool get_glwidgets_active(const Window& win);
@@ -312,6 +310,6 @@ void draw_gllog(const Window& win);
 
 inline vec2i get_framebuffer_size(const Window& win);
 
-}  // namespace yocto
+}  // namespace opengl
 
 #endif
