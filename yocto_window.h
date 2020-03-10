@@ -183,119 +183,121 @@ void update_camera(frame3f& frame, float& focus, const Window& win);
 // OPENGL WIDGETS
 // -----------------------------------------------------------------------------
 
-void init_widgets(Window& win, int width = 320, bool left = true);
-bool get_widgets_active(const Window& win);
+bool begin_header(Window& win, const char* title);
+void end_header(Window& win);
 
-void begin_widgets(const Window& win);
-void begin_widgets(const Window& win, const vec2f& position, const vec2f& size);
-void end_widgets(const Window& win);
+void gui_label(Window& win, const char* lbl, const std::string& text);
 
-bool begin_widgets_window(const Window& win, const char* title);
+void gui_separator(Window& win);
+void continue_line(Window& win);
 
-bool begin_header(const Window& win, const char* title);
-void end_header(const Window& win);
+bool gui_button(Window& win, const char* lbl, bool enabled = true);
 
-void open_modal(const Window& win, const char* lbl);
-void clear_modal(const Window& win);
-bool begin_modal(const Window& win, const char* lbl);
-void end_modal(const Window& win);
-bool is_modal_open(const Window& win, const char* lbl);
-
-bool gui_messages(const Window& win);
-void push_message(const string& message);
-void push_message(const Window& win, const string& message);
-bool gui_filedialog(const Window& win, const char* lbl, string& path, bool save,
-    const string& dirname, const string& filename, const string& filter);
-bool gui_filedialog_button(const Window& win, const char* button_lbl,
-    bool button_active, const char* lbl, string& path, bool save,
-    const string& dirname, const string& filename, const string& filter);
-
-void gui_label(const Window& win, const char* lbl, const string& text);
-
-bool begin_header_widget(const Window& win, const char* label);
-void end_header_widget(const Window& win);
-
-void gui_separator(const Window& win);
-void continue_line(const Window& win);
-
-bool gui_button(const Window& win, const char* lbl);
-bool gui_button(const Window& win, const char* lbl, bool enabled);
-
-bool gui_textinput(const Window& win, const char* lbl, string& value);
-bool gui_slider(
-    const Window& win, const char* lbl, float& value, float min, float max);
-bool gui_slider(
-    const Window& win, const char* lbl, vec2f& value, float min, float max);
-bool gui_slider(
-    const Window& win, const char* lbl, vec3f& value, float min, float max);
-bool gui_slider(
-    const Window& win, const char* lbl, vec4f& value, float min, float max);
+bool gui_textinput(Window& win, const char* lbl, std::string& value);
 
 bool gui_slider(
-    const Window& win, const char* lbl, int& value, int min, int max);
+    Window& win, const char* lbl, float& value, float min, float max);
 bool gui_slider(
-    const Window& win, const char* lbl, vec2i& value, int min, int max);
+    Window& win, const char* lbl, vec2f& value, float min, float max);
 bool gui_slider(
-    const Window& win, const char* lbl, vec3i& value, int min, int max);
+    Window& win, const char* lbl, vec3f& value, float min, float max);
 bool gui_slider(
-    const Window& win, const char* lbl, vec4i& value, int min, int max);
+    Window& win, const char* lbl, vec4f& value, float min, float max);
 
-bool gui_dragger(const Window& win, const char* lbl, float& value,
-    float speed = 1.0f, float min = 0.0f, float max = 0.0f);
-bool gui_dragger(const Window& win, const char* lbl, vec2f& value,
-    float speed = 1.0f, float min = 0.0f, float max = 0.0f);
-bool gui_dragger(const Window& win, const char* lbl, vec3f& value,
-    float speed = 1.0f, float min = 0.0f, float max = 0.0f);
-bool gui_dragger(const Window& win, const char* lbl, vec4f& value,
-    float speed = 1.0f, float min = 0.0f, float max = 0.0f);
+bool gui_slider(Window& win, const char* lbl, int& value, int min, int max);
+bool gui_slider(Window& win, const char* lbl, vec2i& value, int min, int max);
+bool gui_slider(Window& win, const char* lbl, vec3i& value, int min, int max);
+bool gui_slider(Window& win, const char* lbl, vec4i& value, int min, int max);
 
-bool gui_dragger(const Window& win, const char* lbl, int& value,
-    float speed = 1, int min = 0, int max = 0);
-bool gui_dragger(const Window& win, const char* lbl, vec2i& value,
-    float speed = 1, int min = 0, int max = 0);
-bool gui_dragger(const Window& win, const char* lbl, vec3i& value,
-    float speed = 1, int min = 0, int max = 0);
-bool gui_dragger(const Window& win, const char* lbl, vec4i& value,
-    float speed = 1, int min = 0, int max = 0);
+bool gui_dragger(Window& win, const char* lbl, float& value, float speed = 1.0f,
+    float min = 0.0f, float max = 0.0f);
+bool gui_dragger(Window& win, const char* lbl, vec2f& value, float speed = 1.0f,
+    float min = 0.0f, float max = 0.0f);
+bool gui_dragger(Window& win, const char* lbl, vec3f& value, float speed = 1.0f,
+    float min = 0.0f, float max = 0.0f);
+bool gui_dragger(Window& win, const char* lbl, vec4f& value, float speed = 1.0f,
+    float min = 0.0f, float max = 0.0f);
 
-bool gui_checkbox(const Window& win, const char* lbl, bool& value);
+bool gui_dragger(Window& win, const char* lbl, int& value, float speed = 1,
+    int min = 0, int max = 0);
+bool gui_dragger(Window& win, const char* lbl, vec2i& value, float speed = 1,
+    int min = 0, int max = 0);
+bool gui_dragger(Window& win, const char* lbl, vec3i& value, float speed = 1,
+    int min = 0, int max = 0);
+bool gui_dragger(Window& win, const char* lbl, vec4i& value, float speed = 1,
+    int min = 0, int max = 0);
 
-bool gui_coloredit(const Window& win, const char* lbl, vec3f& value);
-bool gui_coloredit(const Window& win, const char* lbl, vec4f& value);
+bool gui_checkbox(Window& win, const char* lbl, bool& value);
 
-bool gui_hdrcoloredit(const Window& win, const char* lbl, vec3f& value);
-bool gui_hdrcoloredit(const Window& win, const char* lbl, vec4f& value);
+bool gui_coloredit(Window& win, const char* lbl, vec3f& value);
+bool gui_coloredit(Window& win, const char* lbl, vec4f& value);
 
-bool gui_combobox(
-    const Window& win, const char* lbl, int& idx, const vector<string>& labels);
-bool gui_combobox(const Window& win, const char* lbl, string& value,
-    const vector<string>& labels);
-bool gui_combobox(const Window& win, const char* lbl, int& idx, int num,
-    const std::function<const char*(int)>& labels, bool include_null = false);
+bool gui_hdrcoloredit(Window& win, const char* lbl, vec3f& value);
+bool gui_hdrcoloredit(Window& win, const char* lbl, vec4f& value);
+
+bool gui_combobox(Window& win, const char* lbl, int& idx,
+    const std::vector<std::string>& labels);
+bool gui_combobox(Window& win, const char* lbl, std::string& value,
+    const std::vector<std::string>& labels);
+bool gui_combobox(Window& win, const char* lbl, int& idx, int num,
+    const std::function<std::string(int)>& labels, bool include_null = false);
 
 template <typename T>
-inline bool gui_combobox(const Window& win, const char* lbl, int& idx,
-    const vector<T>& vals, bool include_null = false) {
-  return gui_combobox(
-      win, lbl, idx, (int)vals.size(),
-      [&](int idx) { return vals[idx].name.c_str(); }, include_null);
+inline bool gui_combobox(Window& win, const char* lbl, T*& value,
+    const std::vector<T*>& vals, bool include_null = false) {
+  auto idx = -1;
+  for (auto pos = 0; pos < vals.size(); pos++)
+    if (vals[pos] == value) idx = pos;
+  auto edited = gui_combobox(
+      win, lbl, idx, (int)vals.size(), [&](int idx) { return vals[idx]->name; },
+      include_null);
+  if (edited) {
+    value = idx >= 0 ? vals[idx] : nullptr;
+  }
+  return edited;
 }
 
-void gui_histogram(
-    const Window& win, const char* lbl, const vector<float>& values);
-void gui_histogram(
-    const Window& win, const char* lbl, const vector<vec2f>& values);
-void gui_histogram(
-    const Window& win, const char* lbl, const vector<vec3f>& values);
-void gui_histogram(
-    const Window& win, const char* lbl, const vector<vec4f>& values);
+template <typename T>
+inline bool gui_combobox(Window& win, const char* lbl, T*& value,
+    const std::vector<T*>& vals, const std::vector<std::string>& labels,
+    bool include_null = false) {
+  auto idx = -1;
+  for (auto pos = 0; pos < vals.size(); pos++)
+    if (vals[pos] == value) idx = pos;
+  auto edited = gui_combobox(
+      win, lbl, idx, (int)vals.size(), [&](int idx) { return labels[idx]; },
+      include_null);
+  if (edited) {
+    value = idx >= 0 ? vals[idx] : nullptr;
+  }
+  return edited;
+}
 
-void log_info(const Window& win, const string& msg);
-void log_error(const Window& win, const string& msg);
-void clear_logs(const Window& win);
-void draw_log(const Window& win);
+void gui_progressbar(Window& win, const char* lbl, float fraction);
 
-inline vec2i get_framebuffer_size(const Window& win);
+void gui_histogram(
+    Window& win, const char* lbl, const std::vector<float>& values);
+void gui_histogram(
+    Window& win, const char* lbl, const std::vector<vec2f>& values);
+void gui_histogram(
+    Window& win, const char* lbl, const std::vector<vec3f>& values);
+void gui_histogram(
+    Window& win, const char* lbl, const std::vector<vec4f>& values);
+
+bool gui_messages(Window& win);
+void push_message(Window& win, const std::string& message);
+bool gui_filedialog(Window& win, const char* lbl, std::string& path, bool save,
+    const std::string& dirname, const std::string& filename,
+    const std::string& filter);
+bool gui_filedialog_button(Window& win, const char* button_lbl,
+    bool button_active, const char* lbl, std::string& path, bool save,
+    const std::string& dirname, const std::string& filename,
+    const std::string& filter);
+
+void log_info(Window& win, const std::string& msg);
+void log_error(Window& win, const std::string& msg);
+void clear_log(Window& win);
+void gui_log(Window& win);
 
 }  // namespace opengl
 
