@@ -45,6 +45,22 @@ inline void run(const mesh_viewer& viewer, const ioshape& mesh) {
   // Init window.
   auto win      = Window();
   win.callbacks = std::move(viewer.callbacks);
+
+  // Init camera.
+  auto camera = make_framing_camera(mesh.positions);
+  auto vel    = vec3f{0, 0, 0};
+  auto move   = [&](const Window& win) {
+    float dt  = win.input.time_delta;
+    auto  acc = vec3f{0, 0, 0};
+    if (is_key_pressed(win, Key('W'))) acc += dt * (-camera.frame.z);
+    if (is_key_pressed(win, Key('S'))) acc += dt * (camera.frame.z);
+    if (is_key_pressed(win, Key('D'))) acc += dt * (camera.frame.x);
+    if (is_key_pressed(win, Key('A'))) acc += dt * (-camera.frame.x);
+    vel += 3000 * acc * dt;
+    if (acc == vec3f{0, 0, 0}) vel *= yocto::exp(-3 * dt);
+    camera.frame.o += vel * dt;
+  };
+
   init_window(win, viewer.viewport, "mesh viewer");
 
   // Init shape.
@@ -52,9 +68,6 @@ inline void run(const mesh_viewer& viewer, const ioshape& mesh) {
                      ? compute_normals(mesh.triangles, mesh.positions)
                      : mesh.normals;
   auto shape = make_mesh(mesh.triangles, mesh.positions, normals);
-
-  // Init camera.
-  auto camera = make_framing_camera(mesh.positions);
 
   // Init shader.
   auto shader = create_program(
@@ -72,8 +85,9 @@ inline void run(const mesh_viewer& viewer, const ioshape& mesh) {
   // auto image  = load_image("/Users/nazzaro/Desktop/img.png");
   // init_texture(target.texture, image, true, true, true);
 
-  win.callbacks.draw = [&](Window& win) {
+  auto draw = [&](Window& win) {
     update_camera(camera.frame, camera.focus, win);
+    move(win);
 
     auto view       = make_view_matrix(camera);
     auto projection = make_projection_matrix(camera, viewer.viewport);
@@ -97,7 +111,7 @@ inline void run(const mesh_viewer& viewer, const ioshape& mesh) {
   };
 
   // Draw.
-  run_draw_loop(win);
+  run_draw_loop(win, draw);
 
   delete_window(win);
 }

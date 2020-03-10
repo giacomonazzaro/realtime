@@ -85,7 +85,6 @@ void init_window(Window& win, const vec2i& size, const string& title) {
 #endif
 
   // create window
-  win      = Window{};
   win.glfw = glfwCreateWindow(size.x, size.y, title.c_str(), nullptr, nullptr);
   if (!win.glfw) throw std::runtime_error("cannot initialize windowing system");
   glfwMakeContextCurrent(win.glfw);
@@ -116,7 +115,7 @@ void init_window(Window& win, const vec2i& size, const string& title) {
     glfwSetKeyCallback(win.glfw,
         [](GLFWwindow* glfw, int key, int scancode, int action, int mods) {
           auto win = (Window*)glfwGetWindowUserPointer(glfw);
-          win->key(key, (bool)action);
+          win->key(Key(key), (bool)action);
         });
   }
 
@@ -173,7 +172,7 @@ void init_window(Window& win, const vec2i& size, const string& title) {
 #endif
     ImGui::StyleColorsDark();
   }
-  update_input(win);
+  update_window_size(win);
 
   // call init callback
   if (win.callbacks.init) win.init();
@@ -198,7 +197,8 @@ void poll_events(const Window& win, bool wait) {
 
 void run_draw_loop(Window& win, bool wait) {
   while (!should_window_close(win)) {
-    update_input(win);
+    update_window_size(win);
+    update_input(win.input, win);
     win.draw();
     win.gui();
     swap_buffers(win);
@@ -242,44 +242,41 @@ void update_window_size(Window& win) {
                            float(win.framebuffer_size.y);
 }
 
-void update_input(Window& win) {
+void update_input(Input& input, const Window& win) {
   // update input
-  win.input.mouse_last = win.input.mouse_pos;
+  input.mouse_last = input.mouse_pos;
   auto  mouse_posx = 0.0, mouse_posy = 0.0;
   auto& glfw = win.glfw;
   glfwGetCursorPos(glfw, &mouse_posx, &mouse_posy);
-  win.input.mouse_pos = vec2f{(float)mouse_posx, (float)mouse_posy};
+  input.mouse_pos = vec2f{(float)mouse_posx, (float)mouse_posy};
   if (win.widgets_width && win.widgets_left)
-    win.input.mouse_pos.x -= win.widgets_width;
-  win.input.mouse_left = glfwGetMouseButton(glfw, GLFW_MOUSE_BUTTON_LEFT) ==
-                         GLFW_PRESS;
-  win.input.mouse_right = glfwGetMouseButton(glfw, GLFW_MOUSE_BUTTON_RIGHT) ==
-                          GLFW_PRESS;
-  win.input.modifier_alt = glfwGetKey(glfw, GLFW_KEY_LEFT_ALT) == GLFW_PRESS ||
-                           glfwGetKey(glfw, GLFW_KEY_RIGHT_ALT) == GLFW_PRESS;
-  win.input.modifier_shift =
-      glfwGetKey(glfw, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ||
-      glfwGetKey(glfw, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS;
-  win.input.modifier_ctrl =
-      glfwGetKey(glfw, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS ||
-      glfwGetKey(glfw, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS;
+    input.mouse_pos.x -= win.widgets_width;
+  input.mouse_left = glfwGetMouseButton(glfw, GLFW_MOUSE_BUTTON_LEFT) ==
+                     GLFW_PRESS;
+  input.mouse_right = glfwGetMouseButton(glfw, GLFW_MOUSE_BUTTON_RIGHT) ==
+                      GLFW_PRESS;
+  input.modifier_alt = glfwGetKey(glfw, GLFW_KEY_LEFT_ALT) == GLFW_PRESS ||
+                       glfwGetKey(glfw, GLFW_KEY_RIGHT_ALT) == GLFW_PRESS;
+  input.modifier_shift = glfwGetKey(glfw, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ||
+                         glfwGetKey(glfw, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS;
+  input.modifier_ctrl = glfwGetKey(glfw, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS ||
+                        glfwGetKey(glfw, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS;
 
   if (win.widgets_width) {
-    auto io                 = &ImGui::GetIO();
-    win.input.is_gui_active = io->WantTextInput || io->WantCaptureMouse ||
-                              io->WantCaptureKeyboard;
+    auto io             = &ImGui::GetIO();
+    input.is_gui_active = io->WantTextInput || io->WantCaptureMouse ||
+                          io->WantCaptureKeyboard;
   }
 
-  update_window_size(win);
-
   // time
-  win.input.clock_last = win.input.clock_now;
-  win.input.clock_now =
+  input.clock_last = input.clock_now;
+  input.clock_now =
       std::chrono::high_resolution_clock::now().time_since_epoch().count();
-  win.input.time_now   = (double)win.input.clock_now / 1e9;
-  win.input.time_delta = (double)(win.input.clock_now - win.input.clock_last) /
-                         1e9;
+  input.time_now   = (double)input.clock_now / 1e9;
+  input.time_delta = (double)(input.clock_now - input.clock_last) / 1e9;
 }
+
+void update_input(Window& win) { update_input(win.input, win); }
 
 void swap_buffers(const Window& win) { glfwSwapBuffers(win.glfw); }
 

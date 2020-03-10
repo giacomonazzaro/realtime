@@ -129,7 +129,7 @@ struct Callbacks {
   function<void(Window&, const vector<string>&)> drop;
 
   // Called when a key is pressed or release.
-  function<void(Window&, int key, bool pressed)> key;
+  function<void(Window&, Key key, bool pressed)> key;
 
   // Called when a mouse button is pressed or release.
   function<void(Window&, bool left, bool pressed)> click;
@@ -159,7 +159,7 @@ struct Window {
   void gui() { callbacks.gui(*this); }
   void refresh() { callbacks.refresh(*this); }
   void drop(const vector<string>& names) { callbacks.drop(*this, names); }
-  void key(int key, bool pressed) { callbacks.key(*this, key, pressed); }
+  void key(Key key, bool pressed) { callbacks.key(*this, key, pressed); }
   void click(bool left, bool pressed) { callbacks.click(*this, left, pressed); }
   void scroll(float amount) { callbacks.scroll(*this, amount); }
 };
@@ -172,6 +172,8 @@ bool should_window_close(const Window& win);
 vec2f get_mouse_pos_normalized(const Window& win);
 bool  is_key_pressed(const Window& win, Key key);
 
+void update_window_size(Window& win);
+void update_input(Input& input, const Window& win);
 void update_input(Window& win);
 void poll_events(const Window& win, bool wait);
 void swap_buffers(const Window& win);
