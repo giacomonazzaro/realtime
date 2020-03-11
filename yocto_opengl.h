@@ -5,7 +5,8 @@
 // INCLUDES
 // -----------------------------------------------------------------------------
 
-#include <functional>
+#include <functional>   // std::function
+#include <type_traits>  // std::is_floating_point
 
 #include "yocto_image.h"
 #include "yocto_math.h"
@@ -19,16 +20,16 @@ using namespace yocto;
 
 bool init_opengl();
 
-// OpenGL program
-struct Rename {
+// OpenGL shader
+struct Shader {
   string vertex_code;
   string fragment_code;
   string vertex_filename;
   string fragment_filename;
-  uint   program_id  = 0;
+  uint   shader_id   = 0;
   uint   vertex_id   = 0;
   uint   fragment_id = 0;
-         operator uint() const { return program_id; }
+         operator uint() const { return shader_id; }
 };
 
 // OpenGL texture
@@ -51,18 +52,11 @@ struct Arraybuffer {
        operator bool() const { return (bool)id; }
 };
 
-// }  // namespace yocto
-
-// -----------------------------------------------------------------------------
-// HIGH-LEVEL OPENGL IMAGE DRAWING
-// -----------------------------------------------------------------------------
-// namespace yocto {
-
 // OpenGL shape
 struct Shape {
   vector<Arraybuffer> vertex_attributes = {};
   Arraybuffer         elements          = {};
-  uint                vao               = 0;
+  uint                id                = 0;
 
   enum struct type { points, lines, triangles };
   type type = type::triangles;
@@ -78,11 +72,10 @@ struct Uniform {
 // OpenGL image data
 struct Image {
   Texture texture = {};
-  Rename  program = {};
+  Shader  shader  = {};
   Shape   shape   = {};
 
   vec2i size() const { return texture.size; }
-        operator bool() const { return (bool)texture; }
 };
 
 // OpenGL image drawing params
@@ -111,13 +104,6 @@ void update_image_region(
 
 // draw image
 void draw_image(Image& glimage, const draw_image_params& params);
-
-// }  // namespace yocto
-
-// -----------------------------------------------------------------------------
-// HIGH-LEVEL OPENGL SCENE RENDERING
-// -----------------------------------------------------------------------------
-// namespace yocto {
 
 // Opengl caemra
 struct Camera {
@@ -170,7 +156,7 @@ struct Scene {
   vector<Material> materials = {};
   vector<Texture>  textures  = {};
   vector<Light>    lights    = {};
-  Rename           program   = {};
+  Shader           shader    = {};
 };
 
 // Draw options
@@ -198,13 +184,6 @@ void make_scene(Scene& scene);
 void draw_scene(
     Scene& state, const vec4i& viewport, const draw_scene_params& params);
 
-// }  // namespace yocto
-
-// -----------------------------------------------------------------------------
-// LOW-LEVEL OPENGL FUNCTIONS
-// -----------------------------------------------------------------------------
-// namespace yocto {
-
 void check_error();
 
 void clear_framebuffer(
@@ -215,20 +194,20 @@ void set_viewport(const vec4i& viewport);
 void set_wireframe(bool enabled);
 void set_blending(bool enabled);
 
-void load_program(Rename& program, const string& vertex_filename,
+void load_shader(Shader& shader, const string& vertex_filename,
     const string& fragment_filename);
-void reload_program(Rename& program);
-bool init_program(Rename& program, const char* vertex, const char* fragment,
+void reload_shader(Shader& shader);
+bool init_shader(Shader& shader, const char* vertex, const char* fragment,
     bool abort_on_error = false);
-bool init_program(Rename& program, bool abort_on_error = false);
+bool init_shader(Shader& shader, bool abort_on_error = false);
 
-Rename create_program(const string& vertex_filename,
+Shader create_shader(const string& vertex_filename,
     const string& fragment_filename, bool abort_on_error = false);
 
-void delete_program(Rename& program);
+void delete_shader(Shader& shader);
 
-void bind_program(const Rename& program);
-void unbind_Program();
+void bind_shader(const Shader& shader);
+void unbind_shader();
 
 void init_texture(Texture& texture, const vec2i& size, bool as_float,
     bool as_srgb, bool linear, bool mipmap);
@@ -257,27 +236,24 @@ inline void init_texture(Texture& texture, const image<vec4b>& img,
 
 void delete_texture(Texture& texture);
 
-bool init_Vertex_array_object(uint& vao);
-bool delete_Vertex_array_object(uint& vao);
-bool bind_Vertex_array_object(uint vao);
+void init_shape(Shape& shape);
+void delete_shape(Shape& shape);
+void bind_shape(const Shape& shape);
 
+void init_arraybuffer(Arraybuffer& buffer, const void* data, bool dynamic);
+
+template <typename T>
 void init_arraybuffer(
-    Arraybuffer& buffer, const vector<float>& data, bool dynamic = false);
-void init_arraybuffer(
-    Arraybuffer& buffer, const vector<vec2f>& data, bool dynamic = false);
-void init_arraybuffer(
-    Arraybuffer& buffer, const vector<vec3f>& data, bool dynamic = false);
-void init_arraybuffer(
-    Arraybuffer& buffer, const vector<vec4f>& data, bool dynamic = false);
-void init_arraybuffer(
-    Arraybuffer& buffer, const vector<vec2i>& data, bool dynamic = false);
-void init_arraybuffer(
-    Arraybuffer& buffer, const vector<vec3i>& data, bool dynamic = false);
-void init_arraybuffer(
-    Arraybuffer& buffer, const vector<vec4i>& data, bool dynamic = false);
+    Arraybuffer& buffer, const vector<T>& array, bool dynamic = false) {
+  buffer           = Arraybuffer{};
+  buffer.num       = size(array);
+  buffer.elem_size = sizeof(T);
+  buffer.is_index  = !std::is_floating_point<typeof(array[0][0])>::value;
+  init_arraybuffer(buffer, array.data(), dynamic);
+}
 void delete_arraybuffer(Arraybuffer& buffer);
 
-int get_uniform_location(const Rename& program, const char* name);
+int get_uniform_location(const Shader& shader, const char* name);
 
 void set_uniform(int location, int value);
 void set_uniform(int location, const vec2i& value);
@@ -294,8 +270,8 @@ void set_uniform(int location, const frame3f& value);
 
 template <typename T>
 inline void set_uniform(
-    const Rename& program, const char* name, const T& value) {
-  set_uniform(get_uniform_location(program, name), value);
+    const Shader& shader, const char* name, const T& value) {
+  set_uniform(get_uniform_location(shader, name), value);
 }
 
 void set_uniform(int location, const float* value, int num_values);
@@ -303,19 +279,19 @@ void set_uniform(int location, const vec3f* value, int num_values);
 
 template <typename T>
 inline void set_uniform(
-    const Rename& program, const char* name, const T* values, int num_values) {
-  set_uniform(get_uniform_location(program, name), values, num_values);
+    const Shader& shader, const char* name, const T* values, int num_values) {
+  set_uniform(get_uniform_location(shader, name), values, num_values);
 }
 
 void set_uniform_texture(int location, const Texture& texture, int unit);
 void set_uniform_texture(
-    const Rename& program, const char* name, const Texture& texture, int unit);
+    const Shader& shader, const char* name, const Texture& texture, int unit);
 void set_uniform_texture(
     int location, int locatiom_on, const Texture& texture, int unit);
-void set_uniform_texture(const Rename& program, const char* name,
+void set_uniform_texture(const Shader& shader, const char* name,
     const char* name_on, const Texture& texture, int unit);
 
-int get_vertexattrib_location(const Rename& program, const char* name);
+int get_vertexattrib_location(const Shader& shader, const char* name);
 
 void set_vertexattrib(int location, const Arraybuffer& buffer, int elem_size);
 void set_vertexattrib(int location, const Arraybuffer& buffer, float value);
@@ -327,9 +303,9 @@ void set_vertexattrib(
     int location, const Arraybuffer& buffer, const vec4f& value);
 
 template <typename T>
-inline void set_vertexattrib(const Rename& program, const char* name,
+inline void set_vertexattrib(const Shader& shader, const char* name,
     const Arraybuffer& buffer, const T& value) {
-  set_vertexattrib(get_vertexattrib_location(program, name), buffer, value);
+  set_vertexattrib(get_vertexattrib_location(shader, name), buffer, value);
 }
 
 void draw_points(const Arraybuffer& buffer);
@@ -343,7 +319,7 @@ template <typename T>
 int set_vertex_attribute(Shape& shape, int index, const vector<T>& data) {
   assert(index < shape.vertex_attributes.size());
   assert(shape.vertex_attributes[index].num == data.size());
-  bind_Vertex_array_object(shape.vao);
+  bind_shape(shape);
   // @Speed: update instead of delete
   delete_arraybuffer(shape.vertex_attributes[index]);
   init_arraybuffer(shape.vertex_attributes[index], data);
@@ -356,7 +332,7 @@ template <typename T>
 int add_vertex_attribute(Shape& shape, const vector<T>& data) {
   assert(shape.vertex_attributes.empty() ||
          shape.vertex_attributes[0].num == data.size());
-  bind_Vertex_array_object(shape.vao);
+  bind_shape(shape);
   int index = shape.vertex_attributes.size();
   shape.vertex_attributes.push_back({});
   init_arraybuffer(shape.vertex_attributes.back(), data);
@@ -367,7 +343,7 @@ int add_vertex_attribute(Shape& shape, const vector<T>& data) {
 
 template <typename T>
 void init_elements(Shape& shape, const vector<T>& data) {
-  bind_Vertex_array_object(shape.vao);
+  bind_shape(shape);
   check_error();
   init_arraybuffer(shape.elements, data);
   int elem_size = sizeof(T) / sizeof(int);
@@ -401,34 +377,34 @@ mat4f make_projection_matrix(const Camera& camera, const vec2i& viewport,
     float near = 0.01, float far = 10000);
 
 template <typename Type>
-void set_uniform(const Rename& program, const Uniform<Type>& u) {
-  set_uniform(program, u.name, u.value);
+void set_uniform(const Shader& shader, const Uniform<Type>& u) {
+  set_uniform(shader, u.name, u.value);
 }
 
 template <typename Type, typename... Args>
-void set_uniform(const Rename& program, const Uniform<Type>& u,
+void set_uniform(const Shader& shader, const Uniform<Type>& u,
     const Uniform<Args>&... args) {
-  set_uniform(program, u);
-  set_uniform(program, args...);
+  set_uniform(shader, u);
+  set_uniform(shader, args...);
 }
 
 template <typename... Args>
 void draw_shape(
-    const Shape& shape, const Rename& program, const Uniform<Args>&... args) {
-  bind_program(program);
-  set_uniform(program, args...);
+    const Shape& shape, const Shader& shader, const Uniform<Args>&... args) {
+  bind_shader(shader);
+  set_uniform(shader, args...);
   draw_shape(shape);
 }
 
-struct Render_target {
+struct Rendertarget {
   Texture texture;
   uint    frame_buffer;
   uint    render_buffer;
 };
 
-Render_target make_render_target(
+Rendertarget make_render_target(
     const vec2i& size, bool as_float, bool as_srgb, bool linear, bool mipmap);
-void bind_render_target(const Render_target& target);
+void bind_render_target(const Rendertarget& target);
 void unbind_render_target();
 
 // template <int N>

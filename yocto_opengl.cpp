@@ -29,9 +29,9 @@ bool init_opengl() {
 }
 
 void check_error() {
-  auto error = glGetError();
-  if (error != GL_NO_ERROR) printf("gl error: %d (%x)\n", error, error);
-  assert(error == GL_NO_ERROR);
+  // auto error = glGetError();
+  // if (error != GL_NO_ERROR) printf("gl error: %d (%x)\n", error, error);
+  assert(glGetError() == GL_NO_ERROR);
 }
 
 void clear_framebuffer(const vec4f& color, bool clear_depth) {
@@ -69,9 +69,9 @@ void set_blending(bool enabled) {
 // HIGH-LEVEL OPENGL IMAGE DRAWING
 // -----------------------------------------------------------------------------
 
-// init image program
-void init_image_program(Image& glimage) {
-  if (glimage.program) return;
+// init image shader
+void init_image_shader(Image& glimage) {
+  if (glimage.shader) return;
   auto vert =
       R"(
       #version 330
@@ -130,7 +130,7 @@ void init_image_program(Image& glimage) {
         )";
 #endif
 
-  init_program(glimage.program, vert, frag);
+  init_shader(glimage.shader, vert, frag);
   init_shape(glimage.shape);
   add_vertex_attribute(
       glimage.shape, vector<vec2f>{{1, 0}, {1, 1}, {0, 0}, {0, 1}});
@@ -140,7 +140,7 @@ void init_image_program(Image& glimage) {
 // update image data
 void update_image(
     Image& glimage, const image<vec4f>& img, bool linear, bool mipmap) {
-  init_image_program(glimage);
+  init_image_shader(glimage);
   if (!glimage.texture) {
     init_texture(glimage.texture, img, false, linear, mipmap);
   } else if (glimage.texture.size != img.size() ||
@@ -154,7 +154,7 @@ void update_image(
 }
 void update_image(
     Image& glimage, const image<vec4b>& img, bool linear, bool mipmap) {
-  init_image_program(glimage);
+  init_image_shader(glimage);
   if (!glimage.texture) {
     init_texture(glimage.texture, img, false, linear, mipmap);
   } else if (glimage.texture.size != img.size() ||
@@ -169,12 +169,12 @@ void update_image(
 
 void update_image_region(
     Image& glimage, const image<vec4f>& img, const image_region& region) {
-  if (!glimage) throw std::runtime_error("glimage is not initialized");
+  if (!glimage.texture) throw std::runtime_error("glimage is not initialized");
   update_texture_region(glimage.texture, img, region, glimage.texture.mipmap);
 }
 void update_image_region(
     Image& glimage, const image<vec4b>& img, const image_region& region) {
-  if (!glimage) throw std::runtime_error("glimage is not initialized");
+  if (!glimage.texture) throw std::runtime_error("glimage is not initialized");
   update_texture_region(glimage.texture, img, region, glimage.texture.mipmap);
 }
 
@@ -183,16 +183,16 @@ void draw_image(Image& glimage, const draw_image_params& params) {
   check_error();
   set_viewport(params.framebuffer);
   clear_framebuffer(params.background);
-  bind_program(glimage.program);
-  set_uniform_texture(glimage.program, "txt", glimage.texture, 0);
-  set_uniform(glimage.program, "window_size",
+  bind_shader(glimage.shader);
+  set_uniform_texture(glimage.shader, "txt", glimage.texture, 0);
+  set_uniform(glimage.shader, "window_size",
       vec2f{(float)params.window.x, (float)params.window.y});
-  set_uniform(glimage.program, "image_size",
+  set_uniform(glimage.shader, "image_size",
       vec2f{(float)glimage.texture.size.x, (float)glimage.texture.size.y});
-  set_uniform(glimage.program, "image_center", params.center);
-  set_uniform(glimage.program, "image_scale", params.scale);
+  set_uniform(glimage.shader, "image_center", params.center);
+  set_uniform(glimage.shader, "image_scale", params.scale);
   draw_shape(glimage.shape);
-  unbind_Program();
+  unbind_shader();
   check_error();
 }
 
@@ -510,8 +510,8 @@ void make_scene(Scene& glscene) {
 #pragma GCC diagnostic pop
 #endif
 
-  // load program
-  init_program(glscene.program, vertex, fragment);
+  // load shader
+  init_shader(glscene.shader, vertex, fragment);
 }
 
 // Draw a shape
@@ -524,58 +524,58 @@ void draw_instance(
   auto& shape    = state.shapes[instance.shape];
   auto& material = state.materials[instance.material];
 
-  if (!shape.vao) return;
+  if (!shape.id) return;
 
-  set_uniform(state.program, "shape_xform", mat4f(instance.frame));
-  set_uniform(state.program, "shape_xform_invtranspose",
+  set_uniform(state.shader, "shape_xform", mat4f(instance.frame));
+  set_uniform(state.shader, "shape_xform_invtranspose",
       transpose(mat4f(inverse(instance.frame, params.non_rigid_frames))));
-  set_uniform(state.program, "shape_normal_offset", 0.0f);
-  set_uniform(state.program, "highlight",
+  set_uniform(state.shader, "shape_normal_offset", 0.0f);
+  set_uniform(state.shader, "highlight",
       instance.highlighted ? vec4f{1, 1, 0, 1} : zero4f);
 
   auto mtype = 2;
   if (material.gltf_textures) mtype = 3;
-  set_uniform(state.program, "mat_type", mtype);
-  set_uniform(state.program, "mat_ke", material.emission);
-  set_uniform(state.program, "mat_kd", material.diffuse);
-  set_uniform(state.program, "mat_ks", vec3f{material.metallic});
-  set_uniform(state.program, "mat_rs", material.roughness);
-  set_uniform(state.program, "mat_op", material.opacity);
-  set_uniform(state.program, "mat_double_sided", (int)params.double_sided);
+  set_uniform(state.shader, "mat_type", mtype);
+  set_uniform(state.shader, "mat_ke", material.emission);
+  set_uniform(state.shader, "mat_kd", material.diffuse);
+  set_uniform(state.shader, "mat_ks", vec3f{material.metallic});
+  set_uniform(state.shader, "mat_rs", material.roughness);
+  set_uniform(state.shader, "mat_op", material.opacity);
+  set_uniform(state.shader, "mat_double_sided", (int)params.double_sided);
   if (material.emission_map >= 0) {
-    set_uniform_texture(state.program, "mat_ke_txt", "mat_ke_txt_on",
+    set_uniform_texture(state.shader, "mat_ke_txt", "mat_ke_txt_on",
         state.textures.at(material.emission_map), 0);
   } else {
     set_uniform_texture(
-        state.program, "mat_ke_txt", "mat_ke_txt_on", Texture{}, 0);
+        state.shader, "mat_ke_txt", "mat_ke_txt_on", Texture{}, 0);
   }
   if (material.diffuse_map >= 0) {
-    set_uniform_texture(state.program, "mat_kd_txt", "mat_kd_txt_on",
+    set_uniform_texture(state.shader, "mat_kd_txt", "mat_kd_txt_on",
         state.textures.at(material.diffuse_map), 1);
   } else {
     set_uniform_texture(
-        state.program, "mat_kd_txt", "mat_kd_txt_on", Texture{}, 1);
+        state.shader, "mat_kd_txt", "mat_kd_txt_on", Texture{}, 1);
   }
   if (material.metallic_map >= 0) {
-    set_uniform_texture(state.program, "mat_ks_txt", "mat_ks_txt_on",
+    set_uniform_texture(state.shader, "mat_ks_txt", "mat_ks_txt_on",
         state.textures.at(material.metallic_map), 2);
   } else {
     set_uniform_texture(
-        state.program, "mat_ks_txt", "mat_ks_txt_on", Texture{}, 2);
+        state.shader, "mat_ks_txt", "mat_ks_txt_on", Texture{}, 2);
   }
   if (material.roughness_map >= 0) {
-    set_uniform_texture(state.program, "mat_rs_txt", "mat_rs_txt_on",
+    set_uniform_texture(state.shader, "mat_rs_txt", "mat_rs_txt_on",
         state.textures.at(material.roughness_map), 3);
   } else {
     set_uniform_texture(
-        state.program, "mat_rs_txt", "mat_rs_txt_on", Texture{}, 3);
+        state.shader, "mat_rs_txt", "mat_rs_txt_on", Texture{}, 3);
   }
   if (material.normal_map >= 0) {
-    set_uniform_texture(state.program, "mat_norm_txt", "mat_norm_txt_on",
+    set_uniform_texture(state.shader, "mat_norm_txt", "mat_norm_txt_on",
         state.textures.at(material.normal_map), 5);
   } else {
     set_uniform_texture(
-        state.program, "mat_norm_txt", "mat_norm_txt_on", Texture{}, 5);
+        state.shader, "mat_norm_txt", "mat_norm_txt_on", Texture{}, 5);
   }
 
   draw_shape(shape);
@@ -584,10 +584,10 @@ void draw_instance(
     if ((vbos.gl_edges && edges && !wireframe) || highlighted) {
         enable_culling(false);
         check_error();
-        set_uniform(state.program, "mtype"), 0);
-        glUniform3f(glGetUniformLocation(state.program, "ke"), 0, 0, 0);
-        set_uniform(state.program, "op"), material.op);
-        set_uniform(state.program, "shp_normal_offset"), 0.01f);
+        set_uniform(state.shader, "mtype"), 0);
+        glUniform3f(glGetUniformLocation(state.shader, "ke"), 0, 0, 0);
+        set_uniform(state.shader, "op"), material.op);
+        set_uniform(state.shader, "shp_normal_offset"), 0.01f);
         check_error();
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbos.gl_edges);
         glDrawElements(GL_LINES, vbos.triangles.size() * 3, GL_UNSIGNED_INT, nullptr);
@@ -615,24 +615,24 @@ void draw_scene(
   clear_framebuffer(params.background);
   set_viewport(viewport);
 
-  bind_program(state.program);
-  set_uniform(state.program, "cam_pos", glcamera.frame.o);
-  set_uniform(state.program, "cam_xform_inv", camera_view);
-  set_uniform(state.program, "cam_proj", camera_proj);
-  set_uniform(state.program, "eyelight", (int)params.eyelight);
-  set_uniform(state.program, "exposure", params.exposure);
-  set_uniform(state.program, "gamma", params.gamma);
+  bind_shader(state.shader);
+  set_uniform(state.shader, "cam_pos", glcamera.frame.o);
+  set_uniform(state.shader, "cam_xform_inv", camera_view);
+  set_uniform(state.shader, "cam_proj", camera_proj);
+  set_uniform(state.shader, "eyelight", (int)params.eyelight);
+  set_uniform(state.shader, "exposure", params.exposure);
+  set_uniform(state.shader, "gamma", params.gamma);
 
   if (!params.eyelight) {
-    set_uniform(state.program, "lamb", zero3f);
-    set_uniform(state.program, "lnum", (int)state.lights.size());
+    set_uniform(state.shader, "lamb", zero3f);
+    set_uniform(state.shader, "lnum", (int)state.lights.size());
     for (auto i = 0; i < state.lights.size(); i++) {
       auto is = std::to_string(i);
-      set_uniform(state.program, ("lpos[" + is + "]").c_str(),
-          state.lights[i].position);
       set_uniform(
-          state.program, ("lke[" + is + "]").c_str(), state.lights[i].emission);
-      set_uniform(state.program, ("ltype[" + is + "]").c_str(),
+          state.shader, ("lpos[" + is + "]").c_str(), state.lights[i].position);
+      set_uniform(
+          state.shader, ("lke[" + is + "]").c_str(), state.lights[i].emission);
+      set_uniform(state.shader, ("ltype[" + is + "]").c_str(),
           (int)state.lights[i].type);
     }
   }
@@ -644,7 +644,7 @@ void draw_scene(
     draw_instance(state, instance, params);
   }
 
-  unbind_Program();
+  unbind_shader();
   if (params.wireframe) set_wireframe(false);
 }
 
@@ -652,32 +652,32 @@ void draw_scene(
 // LOW-LEVEL OPENGL FUNCTIONS
 // -----------------------------------------------------------------------------
 
-void reload_program(Rename& program) {
-  load_text(program.vertex_filename, program.vertex_code);
-  load_text(program.fragment_filename, program.fragment_code);
+void reload_shader(Shader& shader) {
+  load_text(shader.vertex_filename, shader.vertex_code);
+  load_text(shader.fragment_filename, shader.fragment_code);
 }
 
-void load_program(Rename& program, const string& vertex_filename,
+void load_shader(Shader& shader, const string& vertex_filename,
     const string& fragment_filename) {
-  program.vertex_filename   = vertex_filename;
-  program.fragment_filename = fragment_filename;
-  reload_program(program);
+  shader.vertex_filename   = vertex_filename;
+  shader.fragment_filename = fragment_filename;
+  reload_shader(shader);
 }
 
-Rename create_program(const string& vertex_filename,
+Shader create_shader(const string& vertex_filename,
     const string& fragment_filename, bool abort_on_error) {
-  Rename program;
-  load_program(program, vertex_filename, fragment_filename);
-  init_program(program, abort_on_error);
-  return program;
+  Shader shader;
+  load_shader(shader, vertex_filename, fragment_filename);
+  init_shader(shader, abort_on_error);
+  return shader;
 }
 
-bool init_program(Rename& program, bool abort_on_error) {
-  return init_program(program, program.vertex_code.c_str(),
-      program.fragment_code.c_str(), abort_on_error);
+bool init_shader(Shader& shader, bool abort_on_error) {
+  return init_shader(shader, shader.vertex_code.c_str(),
+      shader.fragment_code.c_str(), abort_on_error);
 }
 
-bool init_program(Rename& program, const char* vertex, const char* fragment,
+bool init_shader(Shader& shader, const char* vertex, const char* fragment,
     bool abort_on_error) {
   check_error();
   int  errflags;
@@ -685,12 +685,12 @@ bool init_program(Rename& program, const char* vertex, const char* fragment,
 
   // create vertex
   check_error();
-  program.vertex_id = glCreateShader(GL_VERTEX_SHADER);
-  glShaderSource(program.vertex_id, 1, &vertex, NULL);
-  glCompileShader(program.vertex_id);
-  glGetShaderiv(program.vertex_id, GL_COMPILE_STATUS, &errflags);
+  shader.vertex_id = glCreateShader(GL_VERTEX_SHADER);
+  glShaderSource(shader.vertex_id, 1, &vertex, NULL);
+  glCompileShader(shader.vertex_id);
+  glGetShaderiv(shader.vertex_id, GL_COMPILE_STATUS, &errflags);
   if (!errflags) {
-    glGetShaderInfoLog(program.vertex_id, 10000, 0, errbuf);
+    glGetShaderInfoLog(shader.vertex_id, 10000, 0, errbuf);
     errbuf[6] = '\n';
     printf("\n*** VERTEX SHADER COMPILATION %s\n", errbuf);
     if (abort_on_error) {
@@ -702,12 +702,12 @@ bool init_program(Rename& program, const char* vertex, const char* fragment,
 
   // create fragment
   check_error();
-  program.fragment_id = glCreateShader(GL_FRAGMENT_SHADER);
-  glShaderSource(program.fragment_id, 1, &fragment, NULL);
-  glCompileShader(program.fragment_id);
-  glGetShaderiv(program.fragment_id, GL_COMPILE_STATUS, &errflags);
+  shader.fragment_id = glCreateShader(GL_FRAGMENT_SHADER);
+  glShaderSource(shader.fragment_id, 1, &fragment, NULL);
+  glCompileShader(shader.fragment_id);
+  glGetShaderiv(shader.fragment_id, GL_COMPILE_STATUS, &errflags);
   if (!errflags) {
-    glGetShaderInfoLog(program.fragment_id, 10000, 0, errbuf);
+    glGetShaderInfoLog(shader.fragment_id, 10000, 0, errbuf);
     errbuf[6] = '\n';
     printf("\n*** FRAGMENT SHADER COMPILATION %s\n", errbuf);
     if (abort_on_error) {
@@ -717,16 +717,16 @@ bool init_program(Rename& program, const char* vertex, const char* fragment,
   }
   check_error();
 
-  // create program
+  // create shader
   check_error();
-  program.program_id = glCreateProgram();
-  glAttachShader(program.program_id, program.vertex_id);
-  glAttachShader(program.program_id, program.fragment_id);
-  glLinkProgram(program.program_id);
-  glValidateProgram(program.program_id);
-  glGetProgramiv(program.program_id, GL_LINK_STATUS, &errflags);
+  shader.shader_id = glCreateProgram();
+  glAttachShader(shader.shader_id, shader.vertex_id);
+  glAttachShader(shader.shader_id, shader.fragment_id);
+  glLinkProgram(shader.shader_id);
+  glValidateProgram(shader.shader_id);
+  glGetProgramiv(shader.shader_id, GL_LINK_STATUS, &errflags);
   if (!errflags) {
-    glGetShaderInfoLog(program.fragment_id, 10000, 0, errbuf);
+    glGetShaderInfoLog(shader.fragment_id, 10000, 0, errbuf);
     //    errbuf[6] = '\n';
     printf("\n*** SHADER LINKING %s\n", errbuf);
     if (abort_on_error) {
@@ -738,14 +738,14 @@ bool init_program(Rename& program, const char* vertex, const char* fragment,
   return true;
 }
 
-void delete_program(Rename& program) {
-  if (!program) return;
-  glDeleteProgram(program.program_id);
-  glDeleteShader(program.vertex_id);
-  glDeleteShader(program.fragment_id);
-  program.program_id  = 0;
-  program.vertex_id   = 0;
-  program.fragment_id = 0;
+void delete_shader(Shader& shader) {
+  if (!shader) return;
+  glDeleteProgram(shader.shader_id);
+  glDeleteShader(shader.vertex_id);
+  glDeleteShader(shader.fragment_id);
+  shader.shader_id   = 0;
+  shader.vertex_id   = 0;
+  shader.fragment_id = 0;
 }
 
 void init_texture(Texture& texture, const vec2i& size, bool as_float,
@@ -831,49 +831,14 @@ void delete_texture(Texture& texture) {
   texture.size = zero2i;
 }
 
-template <typename T>
-void init_array_buffer_impl(
-    Arraybuffer& buffer, const vector<T>& array, bool dynamic, bool is_index = false) {
-  buffer           = Arraybuffer{};
-  buffer.num       = size(array);
-  buffer.elem_size = sizeof(T);
-  buffer.is_index  = is_index;
+void init_arraybuffer(Arraybuffer& buffer, const void* data, bool dynamic) {
   check_error();
   glGenBuffers(1, &buffer.id);
-  auto flag = is_index ? GL_ELEMENT_ARRAY_BUFFER : GL_ARRAY_BUFFER;
+  auto flag = buffer.is_index ? GL_ELEMENT_ARRAY_BUFFER : GL_ARRAY_BUFFER;
   glBindBuffer(flag, buffer.id);
-  glBufferData(flag, size(array) * sizeof(T), array.data(),
+  glBufferData(flag, buffer.num * buffer.elem_size, data,
       (dynamic) ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
   check_error();
-}
-
-void init_arraybuffer(
-    Arraybuffer& buffer, const vector<float>& data, bool dynamic) {
-  init_array_buffer_impl(buffer, data, dynamic);
-}
-void init_arraybuffer(
-    Arraybuffer& buffer, const vector<vec2f>& data, bool dynamic) {
-  init_array_buffer_impl(buffer, data, dynamic);
-}
-void init_arraybuffer(
-    Arraybuffer& buffer, const vector<vec3f>& data, bool dynamic) {
-  init_array_buffer_impl(buffer, data, dynamic);
-}
-void init_arraybuffer(
-    Arraybuffer& buffer, const vector<vec4f>& data, bool dynamic) {
-  init_array_buffer_impl(buffer, data, dynamic);
-}
-void init_arraybuffer(
-    Arraybuffer& buffer, const vector<vec2i>& data, bool dynamic) {
-  init_array_buffer_impl(buffer, data, dynamic, true);
-}
-void init_arraybuffer(
-    Arraybuffer& buffer, const vector<vec3i>& data, bool dynamic) {
-  init_array_buffer_impl(buffer, data, dynamic, true);
-}
-void init_arraybuffer(
-    Arraybuffer& buffer, const vector<vec4i>& data, bool dynamic) {
-  init_array_buffer_impl(buffer, data, dynamic, true);
 }
 
 void delete_arraybuffer(Arraybuffer& buffer) {
@@ -884,33 +849,11 @@ void delete_arraybuffer(Arraybuffer& buffer) {
   buffer.num       = 0;
 }
 
-bool init_Vertex_array_object(uint& vao) {
-  check_error();
-  glGenVertexArrays(1, &vao);
-  glBindVertexArray(vao);
-  check_error();
-  return true;
-}
+void bind_shader(const Shader& shader) { glUseProgram(shader.shader_id); }
+void unbind_shader() { glUseProgram(0); }
 
-bool delete_Vertex_array_object(uint& vao) {
-  check_error();
-  glDeleteVertexArrays(1, &vao);
-  check_error();
-  return true;
-}
-
-bool bind_Vertex_array_object(uint vao) {
-  check_error();
-  glBindVertexArray(vao);
-  check_error();
-  return true;
-}
-
-void bind_program(const Rename& program) { glUseProgram(program.program_id); }
-void unbind_Program() { glUseProgram(0); }
-
-int get_uniform_location(const Rename& program, const char* name) {
-  return glGetUniformLocation(program.program_id, name);
+int get_uniform_location(const Shader& shader, const char* name) {
+  return glGetUniformLocation(shader.shader_id, name);
 }
 
 void set_uniform(int location, int value) {
@@ -999,8 +942,8 @@ void set_uniform_texture(int location, const Texture& texture, int unit) {
 }
 
 void set_uniform_texture(
-    const Rename& program, const char* name, const Texture& texture, int unit) {
-  set_uniform_texture(get_uniform_location(program, name), texture, unit);
+    const Shader& shader, const char* name, const Texture& texture, int unit) {
+  set_uniform_texture(get_uniform_location(shader, name), texture, unit);
 }
 
 void set_uniform_texture(
@@ -1017,14 +960,14 @@ void set_uniform_texture(
   check_error();
 }
 
-void set_uniform_texture(const Rename& program, const char* name,
+void set_uniform_texture(const Shader& shader, const char* name,
     const char* name_on, const Texture& texture, int unit) {
-  set_uniform_texture(get_uniform_location(program, name),
-      get_uniform_location(program, name_on), texture, unit);
+  set_uniform_texture(get_uniform_location(shader, name),
+      get_uniform_location(shader, name_on), texture, unit);
 }
 
-int get_vertexattrib_location(const Rename& program, const char* name) {
-  return glGetAttribLocation(program.program_id, name);
+int get_vertexattrib_location(const Shader& shader, const char* name) {
+  return glGetAttribLocation(shader.shader_id, name);
 }
 
 void set_vertexattrib(int location, const Arraybuffer& buffer, int elem_size) {
@@ -1088,17 +1031,17 @@ void set_vertexattrib(
 }
 
 void draw_points(const Arraybuffer& buffer) {
-    check_error();
+  check_error();
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.id);
   glDrawElements(GL_POINTS, buffer.num, GL_UNSIGNED_INT, nullptr);
-    check_error();
+  check_error();
 }
 
 void draw_lines(const Arraybuffer& buffer) {
-    check_error();
-glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.id);
+  check_error();
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.id);
   glDrawElements(GL_LINES, buffer.num * 2, GL_UNSIGNED_INT, nullptr);
-    check_error();
+  check_error();
 }
 
 void draw_triangles(const Arraybuffer& buffer) {
@@ -1122,8 +1065,8 @@ void draw_triangle_strip(const Arraybuffer& buffer) {
 
 void draw_image(const Texture& texture, int win_width, int win_height,
     const vec2f& image_center, float image_scale) {
-  static Rename        gl_prog      = {};
-  static Arraybuffer   gl_texcoord  = {};
+  static Shader      gl_prog      = {};
+  static Arraybuffer gl_texcoord  = {};
   static Arraybuffer gl_triangles = {};
 
   // initialization
@@ -1151,16 +1094,15 @@ void draw_image(const Texture& texture, int win_width, int win_height,
                 frag_color = vec4(1,0,0,1);
             }
         )";
-    init_program(gl_prog, vert, frag);
+    init_shader(gl_prog, vert, frag);
     init_arraybuffer(
         gl_texcoord, vector<vec2f>{{0, 0}, {0, 1}, {1, 1}, {1, 0}}, false);
-    init_arraybuffer(
-        gl_triangles, vector<vec3i>{{0, 1, 2}, {0, 2, 3}}, false);
+    init_arraybuffer(gl_triangles, vector<vec3i>{{0, 1, 2}, {0, 2, 3}}, false);
   }
 
   // draw
   check_error();
-  bind_program(gl_prog);
+  bind_shader(gl_prog);
   set_uniform_texture(gl_prog, "txt", texture, 0);
   set_uniform(
       gl_prog, "window_size", vec2f{(float)win_width, (float)win_height});
@@ -1170,15 +1112,15 @@ void draw_image(const Texture& texture, int win_width, int win_height,
   set_uniform(gl_prog, "image_scale", image_scale);
   set_vertexattrib(gl_prog, "texcoord", gl_texcoord, zero2f);
   draw_triangles(gl_triangles);
-  unbind_Program();
+  unbind_shader();
   check_error();
 }
 
 void draw_image_background(const Texture& texture, int win_width,
     int win_height, const vec2f& image_center, float image_scale,
     float border_size) {
-  static Rename        gl_prog      = {};
-  static Arraybuffer   gl_texcoord  = {};
+  static Shader      gl_prog      = {};
+  static Arraybuffer gl_texcoord  = {};
   static Arraybuffer gl_triangles = {};
 
   // initialization
@@ -1212,15 +1154,14 @@ void draw_image_background(const Texture& texture, int win_width,
                 else frag_color = vec4(0.3,0.3,0.3,1);
             }
         )";
-    init_program(gl_prog, vert, frag);
+    init_shader(gl_prog, vert, frag);
     init_arraybuffer(
         gl_texcoord, vector<vec2f>{{0, 0}, {0, 1}, {1, 1}, {1, 0}}, false);
-    init_arraybuffer(
-        gl_triangles, vector<vec3i>{{0, 1, 2}, {0, 2, 3}}, false);
+    init_arraybuffer(gl_triangles, vector<vec3i>{{0, 1, 2}, {0, 2, 3}}, false);
   }
 
   // draw
-  bind_program(gl_prog);
+  bind_shader(gl_prog);
   set_uniform(
       gl_prog, "window_size", vec2f{(float)win_width, (float)win_height});
   set_uniform(gl_prog, "image_size",
@@ -1231,10 +1172,29 @@ void draw_image_background(const Texture& texture, int win_width,
   set_uniform(gl_prog, "image_scale", image_scale);
   set_vertexattrib(gl_prog, "texcoord", gl_texcoord, zero2f);
   draw_triangles(gl_triangles);
-  unbind_Program();
+  unbind_shader();
 }
 
-void init_shape(Shape& shape) { init_Vertex_array_object(shape.vao); }
+void init_shape(Shape& shape) {
+  check_error();
+  glGenVertexArrays(1, &shape.id);
+  glBindVertexArray(shape.id);
+  check_error();
+}
+
+void delete_shape(Shape& shape) {
+  for (auto& attribute : shape.vertex_attributes) {
+    delete_arraybuffer(attribute);
+  }
+  delete_arraybuffer(shape.elements);
+  glDeleteVertexArrays(1, &shape.id);
+}
+
+void bind_shape(const Shape& shape) {
+  check_error();
+  glBindVertexArray(shape.id);
+  check_error();
+}
 
 Shape make_points(const vector<vec3f>& positions) {
   auto shape = Shape{};
@@ -1330,7 +1290,7 @@ Shape make_vector_field(const vector<vec3f>& vector_field,
 }
 
 void draw_shape(const Shape& shape) {
-  bind_Vertex_array_object(shape.vao);
+  bind_shape(shape);
 
   // draw strip of points, lines or triangles
   if (!shape.elements) {
@@ -1358,14 +1318,6 @@ void draw_shape(const Shape& shape) {
   check_error();
 }
 
-void delete_shape(Shape& glshape) {
-  for (auto& attribute : glshape.vertex_attributes) {
-    delete_arraybuffer(attribute);
-  }
-  delete_arraybuffer(glshape.elements);
-  delete_Vertex_array_object(glshape.vao);
-}
-
 Camera make_lookat_camera(const vec3f& from, const vec3f& to, const vec3f& up) {
   auto camera  = Camera{};
   camera.frame = lookat_frame(from, to);
@@ -1387,9 +1339,9 @@ mat4f make_projection_matrix(
   return perspective_mat(camera_yfov, camera_aspect, near, far);
 }
 
-Render_target make_render_target(
+Rendertarget make_render_target(
     const vec2i& size, bool as_float, bool as_srgb, bool linear, bool mipmap) {
-  auto target = Render_target{};
+  auto target = Rendertarget{};
   glGenFramebuffers(1, &target.frame_buffer);
   glBindFramebuffer(GL_FRAMEBUFFER, target.frame_buffer);
 
@@ -1423,7 +1375,7 @@ Render_target make_render_target(
   return target;
 }
 
-void bind_render_target(const Render_target& target) {
+void bind_render_target(const Rendertarget& target) {
   glBindFramebuffer(GL_FRAMEBUFFER, target.frame_buffer);
 }
 

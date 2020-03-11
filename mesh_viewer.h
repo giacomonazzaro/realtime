@@ -70,13 +70,13 @@ inline void run(const mesh_viewer& viewer, const ioshape& mesh) {
   auto shape = make_mesh(mesh.triangles, mesh.positions, normals);
 
   // Init shader.
-  auto shader = create_program(
+  auto shader = create_shader(
       viewer.vertex_filename, viewer.fragment_filename, true);
-  auto normal_shader = create_program(
+  auto normal_shader = create_shader(
       viewer.vertex_filename, "shaders/mesh_normals.frag", true);
 
   auto quad        = make_quad();
-  auto quad_shader = create_program(
+  auto quad_shader = create_shader(
       "shaders/quad.vert", "shaders/quad-texture.frag", true);
   auto si           = win.framebuffer_size;
   auto color_buffer = make_render_target(si, false, false, true, true);
@@ -105,7 +105,7 @@ inline void run(const mesh_viewer& viewer, const ioshape& mesh) {
     // clang-format on
 
     clear_framebuffer(vec4f(1, 1, 1, 1));
-    bind_program(quad_shader);
+    bind_shader(quad_shader);
     set_uniform_texture(quad_shader, "color_tex", color_buffer.texture, 0);
     draw_shape(quad, quad_shader, Uniform{"color", vec3f{1, 1, 1}});
   };

@@ -14,7 +14,7 @@ int main(int num_args, const char* args[]) {
   init_window(window, {400, 400}, "Window");
 
   auto mesh   = load_shape(args[1]);
-  auto shader = create_program("shaders/mesh.vert", "shaders/mesh.frag");
+  auto shader = create_shader("shaders/mesh.vert", "shaders/mesh.frag");
   auto shape  = make_mesh(mesh.triangles, mesh.positions, mesh.normals);
   auto camera = make_lookat_camera({3, 3, 3}, {0, 0, 0});
   auto draw   = [&](Window& win) {
