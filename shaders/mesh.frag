@@ -11,9 +11,6 @@ uniform vec3 color;
 vec3 gamma(vec3 c) { return pow(clamp(c, 0, 1), vec3(1/2.2)) ;}
 
 void main() {
-    // vec3 color = vec3(normal.y);
-    // vec3 c = color * (normal.y * 0.5 + 0.5);
-    vec3 c = color * smoothstep(0, 0.01, normal.y);
-    c = c * 0.5 + 0.5;
+    vec3 c = color * (normal.y * 0.5 + 0.5);
     result = vec4(gamma(c), 1);
 }

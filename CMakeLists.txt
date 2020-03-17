@@ -19,9 +19,9 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
         set(GL_EXTRA_LIBRARIES)
     endif(APPLE)
     if(WIN32)
-        include_directories(${CMAKE_SOURCE_DIR}/apps/ext/glfw_w32/include)
-        link_directories(${CMAKE_SOURCE_DIR}/apps/ext/glfw_w32/lib-vc2015)
-        find_library(GLFW_LIBRARY NAMES glfw3dll PATHS ${CMAKE_SOURCE_DIR}/apps/ext/glfw_w32/lib-vc2015)
+        include_directories(${CMAKE_SOURCE_DIR}/source/ext/glfw_w32/include)
+        link_directories(${CMAKE_SOURCE_DIR}/source/ext/glfw_w32/lib-vc2015)
+        find_library(GLFW_LIBRARY NAMES glfw3dll PATHS ${CMAKE_SOURCE_DIR}/source/ext/glfw_w32/lib-vc2015)
         set(GL_EXTRA_LIBRARIES)
     endif(WIN32)
     if(UNIX AND NOT APPLE)
@@ -32,19 +32,10 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
     add_definitions(-DIMGUI_IMPL_OPENGL_LOADER_GLAD)
 
     add_library(yocto_opengl
-        yocto_opengl.h yocto_opengl.cpp yocto_image.cpp yocto_modelio.cpp yocto_window.cpp
+        source/yocto_opengl.h source/yocto_opengl.cpp source/yocto_image.cpp source/yocto_modelio.cpp source/yocto_window.cpp
         # yocto_font.h yocto_font.cpp
-        ext/imgui/imgui.cpp ext/imgui/imgui_draw.cpp ext/imgui/imgui_widgets.cpp
-        ext/imgui/imgui_impl_glfw.cpp ext/imgui/imgui_impl_opengl3.cpp ext/glad/glad.c)
-
-    # target_link_libraries(yscnview yocto yocto_opengl ${OPENGL_gl_LIBRARY} ${GLFW_LIBRARY} ${GL_EXTRA_LIBRARIES})
-    # target_link_libraries(yimshproc yocto yocto_opengl ${OPENGL_gl_LIBRARY} ${GLFW_LIBRARY} ${GL_EXTRA_LIBRARIES})
-    # target_link_libraries(yscnitrace yocto yocto_opengl ${OPENGL_gl_LIBRARY} ${GLFW_LIBRARY} ${GL_EXTRA_LIBRARIES})
-    # target_link_libraries(yscnitraces yocto yocto_opengl ${OPENGL_gl_LIBRARY} ${GLFW_LIBRARY} ${GL_EXTRA_LIBRARIES})
-    # target_link_libraries(yimgview yocto yocto_opengl ${OPENGL_gl_LIBRARY} ${GLFW_LIBRARY} ${GL_EXTRA_LIBRARIES})
-    # target_link_libraries(yimgviews yocto yocto_opengl ${OPENGL_gl_LIBRARY} ${GLFW_LIBRARY} ${GL_EXTRA_LIBRARIES})
-    # target_link_libraries(ui freetype yaml-cpp yocto yocto_opengl ${OPENGL_gl_LIBRARY} ${GLFW_LIBRARY} ${GL_EXTRA_LIBRARIES})
-
+        source/ext/imgui/imgui.cpp source/ext/imgui/imgui_draw.cpp source/ext/imgui/imgui_widgets.cpp
+        source/ext/imgui/imgui_impl_glfw.cpp source/ext/imgui/imgui_impl_opengl3.cpp source/ext/glad/glad.c)
 
 
 # include_directories(“${PROJECT_SOURCE_DIR}/../yocto-gl”)
