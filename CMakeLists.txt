@@ -30,6 +30,11 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
         set(GL_EXTRA_LIBRARIES dl)
     endif(UNIX AND NOT APPLE)
     add_definitions(-DIMGUI_IMPL_OPENGL_LOADER_GLAD)
+    
+    # add_library(box2d
+    #     source/ext/box2d-lite/src/Arbiter.cpp source/ext/box2d-lite/src/Body.cpp source/ext/box2d-lite/src/Collide.cpp source/ext/box2d-lite/src/Joint.cpp source/ext/box2d-lite/src/World.cpp
+    # )
+
 
     add_library(yocto_opengl
         source/yocto_opengl.h source/yocto_opengl.cpp source/yocto_image.cpp source/yocto_modelio.cpp source/yocto_window.cpp
@@ -40,9 +45,13 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 # include_directories(“${PROJECT_SOURCE_DIR}/../yocto-gl”)
 # add_subdirectory (source/ext/yocto-gl)
+# add_subdirectory (source/ext/box2d-lite)
 # include_directories (source/ext)
 add_executable(test examples/main.cpp)
 target_link_libraries(test yocto_opengl ${OPENGL_gl_LIBRARY} ${GLFW_LIBRARY} ${GL_EXTRA_LIBRARIES})
+
+add_executable(symchem examples/symchem.cpp)
+target_link_libraries(symchem yocto_opengl ${OPENGL_gl_LIBRARY} ${GLFW_LIBRARY} ${GL_EXTRA_LIBRARIES})
 
 add_executable(csg examples/csg.cpp)
 target_link_libraries(csg yocto_opengl ${OPENGL_gl_LIBRARY} ${GLFW_LIBRARY} ${GL_EXTRA_LIBRARIES})
