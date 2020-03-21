@@ -45,13 +45,13 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 # include_directories(“${PROJECT_SOURCE_DIR}/../yocto-gl”)
 # add_subdirectory (source/ext/yocto-gl)
-# add_subdirectory (source/ext/box2d-lite)
+add_subdirectory (source/ext/box2d)
 # include_directories (source/ext)
 add_executable(test examples/main.cpp)
 target_link_libraries(test yocto_opengl ${OPENGL_gl_LIBRARY} ${GLFW_LIBRARY} ${GL_EXTRA_LIBRARIES})
 
 add_executable(symchem examples/symchem.cpp)
-target_link_libraries(symchem yocto_opengl ${OPENGL_gl_LIBRARY} ${GLFW_LIBRARY} ${GL_EXTRA_LIBRARIES})
+target_link_libraries(symchem box2d yocto_opengl ${OPENGL_gl_LIBRARY} ${GLFW_LIBRARY} ${GL_EXTRA_LIBRARIES})
 
 add_executable(csg examples/csg.cpp)
 target_link_libraries(csg yocto_opengl ${OPENGL_gl_LIBRARY} ${GLFW_LIBRARY} ${GL_EXTRA_LIBRARIES})

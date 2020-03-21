@@ -1,4 +1,4 @@
-#include "../source/ext/box2d-lite/include/box2d-lite/World.h"
+#include "../source/ext/box2d/include/box2d/box2d.h"
 #include "../source/yocto_opengl.h"
 #include "../source/yocto_window.h"
 using namespace yocto;
@@ -12,7 +12,16 @@ struct Atom {
   vec2f     velocity = {0, 0};
   float     scale    = 1;
   atom_type type     = atom_type::square;
+  b2Body*   body;
 };
+
+struct Molecule {
+  vector<Atom>          atoms;
+  vector<array<int, 5>> graph;
+  b2Body*               body;
+};
+
+void bond(Molecule& molecule, const Atom& atom, int node) {}
 
 struct Game {
   vector<Atom> atoms;
@@ -21,6 +30,8 @@ struct Game {
 
   vector<Shape> shapes;
   Shader        shader;
+
+  b2World world = b2World({0, 0});
 };
 
 void move_atoms(Game& game, const Window& win) {
@@ -29,7 +40,7 @@ void move_atoms(Game& game, const Window& win) {
     auto& atom = game.atoms[game.selected];
 
     if (win.input.modifier_shift) {
-      auto rot = rotation_mat(dt);
+      auto rot = rotation_mat(dt * 2);
       if (is_key_pressed(win, Key::left)) atom.rotation = rot * atom.rotation;
       if (is_key_pressed(win, Key::right))
         atom.rotation = transpose(rot) * atom.rotation;
@@ -40,16 +51,25 @@ void move_atoms(Game& game, const Window& win) {
       if (is_key_pressed(win, Key::right)) step += {1, 0};
       if (is_key_pressed(win, Key::up)) step += {0, 1};
       if (is_key_pressed(win, Key::down)) step += {0, -1};
-      step          = normalize(step) * s;
-      atom.velocity = step;
+      step = normalize(step) * s;
+      atom.body->SetLinearVelocity({step.x, step.y});
     }
   }
 
-  for (int i = 0; i < game.atoms.size(); i++) {
-    auto& atom = game.atoms[i];
-    if (game.selected != i) atom.velocity *= yocto::exp(-dt);
-    atom.position += atom.velocity * dt;
-  }
+  float timeStep           = 1.0f / 120.0f;
+  int   velocityIterations = 8;
+  int   positionIterations = 8;
+  game.world.Step(timeStep, velocityIterations, positionIterations);
+
+  // for (int i = 0; i < game.atoms.size(); i++) {
+  //   auto& atom = game.atoms[i];
+  //   // if (game.selected != i) atom.velocity *= yocto::exp(-dt * 0.0001);
+  //   atom.position += atom.velocity * dt;
+  //   if (atom.position.x > 1) atom.position.x = -1;
+  //   if (atom.position.x < -1) atom.position.x = 1;
+  //   if (atom.position.y > 1) atom.position.y = -1;
+  //   if (atom.position.y < -1) atom.position.y = 1;
+  // }
 }
 
 float polygon_radius(int n) { return 2 * yocto::sin(pif / n); }
@@ -64,13 +84,20 @@ void draw(Window& win, Game& game) {
   // game.atoms[0].position = vec2f(cos(win.input.time_now), 0);
 
   for (int i = 0; i < game.atoms.size(); i++) {
-    auto& atom = game.atoms[i];
+    // int i = 0;
+    // for (b2Body* b = game.world.GetBodyList(); b && i < game.atoms.size();
+    //      b         = b->GetNext(), i++) {
+    auto& atom  = game.atoms[i];
+    auto  frame = atom.body->GetTransform();
 
     // clang-format off
     draw_shape(game.shapes[(int)atom.type], game.shader,
       Uniform("color", vec3f(1, 1, 1)),
-      Uniform("position", atom.position),
-      Uniform("rotation", atom.rotation),
+      // Uniform("position", atom.position),
+      // Uniform("rotation", atom.rotation),
+      Uniform("position", vec2f{frame.p.x, frame.p.y}),
+      Uniform("rotation", vec2f{frame.q.c, frame.q.s}),
+
       Uniform("scale", atom.scale),
       Uniform("id", i),
       Uniform("selected", game.selected),
@@ -78,6 +105,17 @@ void draw(Window& win, Game& game) {
     );
     // clang-format on
   }
+}
+
+vector<vec2f> make_regular_polygon_(int N) {
+  // if (N == 4) return {{0.5, 0.5}, {-0.5, 0.5}, {-0.5, -0.5}, {0.5, -0.5}};
+  auto positions = vector<vec2f>(N);
+  for (int i = 0; i < N; ++i) {
+    float angle  = (2 * pif * i) / N;
+    positions[i] = {yocto::cos(angle), yocto::sin(angle)};
+    positions[i] /= 2 * yocto::sin(pif / N);
+  }
+  return positions;
 }
 
 void init_game(Game& game) {
@@ -88,11 +126,73 @@ void init_game(Game& game) {
   game.shader = create_shader("shaders/game.vert", "shaders/atom.frag", true);
 
   game.atoms.resize(2);
-  game.atoms[0].position = vec2f(1, 0.5);
-  game.atoms[0].scale    = 0.1;
-  game.atoms[1].scale    = 0.1;
+  game.atoms[0].position = vec2f(0.5, 0.5);
+  game.atoms[0].type     = atom_type::pentagon;
+  game.atoms[0].scale    = 0.3;
+  game.atoms[1].scale    = 0.3;
 
   // Physics
+  for (auto& atom : game.atoms) {
+    b2BodyDef bodyDef;
+    bodyDef.type = b2_dynamicBody;
+    bodyDef.position.Set(atom.position.x, atom.position.y);
+
+    int num_sides;
+    if (atom.type == atom_type::square) num_sides = 4;
+    if (atom.type == atom_type::triangle) num_sides = 3;
+    if (atom.type == atom_type::pentagon) num_sides = 5;
+    auto positions = make_regular_polygon_(num_sides);
+
+    atom.body = game.world.CreateBody(&bodyDef);
+    b2PolygonShape polygon;
+    b2Vec2         vertices[12];
+    for (int i = 0; i < num_sides; i++) {
+      vertices[i].Set(positions[i].x * atom.scale, positions[i].y * atom.scale);
+    }
+    polygon.Set(vertices, num_sides);
+
+    b2FixtureDef fixtureDef;
+    fixtureDef.shape    = &polygon;
+    fixtureDef.density  = 1.0f;
+    fixtureDef.friction = 0.3f;
+
+    atom.body->CreateFixture(&fixtureDef);
+  }
+
+  {
+    b2BodyDef groundBodyDef;
+    groundBodyDef.position.Set(0, -1);
+    b2Body*        groundBody = game.world.CreateBody(&groundBodyDef);
+    b2PolygonShape groundBox;
+    groundBox.SetAsBox(10.0f, 0.001f);
+    groundBody->CreateFixture(&groundBox, 0.0f);
+  }
+  {
+    b2BodyDef groundBodyDef;
+    groundBodyDef.position.Set(0, 1);
+    b2Body*        groundBody = game.world.CreateBody(&groundBodyDef);
+    b2PolygonShape groundBox;
+    groundBox.SetAsBox(10.0f, 0.001f);
+    groundBody->CreateFixture(&groundBox, 0.0f);
+  }
+  {
+    b2BodyDef groundBodyDef;
+    groundBodyDef.position.Set(1, 0);
+    b2Body*        groundBody = game.world.CreateBody(&groundBodyDef);
+    b2PolygonShape groundBox;
+    groundBox.SetAsBox(0.001f, 10);
+    groundBody->CreateFixture(&groundBox, 0.0f);
+  }
+  {
+    b2BodyDef groundBodyDef;
+    groundBodyDef.position.Set(-1, 0);
+    b2Body*        groundBody = game.world.CreateBody(&groundBodyDef);
+    b2PolygonShape groundBox;
+    groundBox.SetAsBox(0.001f, 10);
+    groundBody->CreateFixture(&groundBox, 0.0f);
+  }
+
+  // game.atoms[1].body->SetLinearVelocity({0.1, 0});
 }
 
 int main(int num_args, const char* args[]) {
@@ -124,13 +224,13 @@ int main(int num_args, const char* args[]) {
 
     if (key == Key(' ')) {
       auto atom     = Atom{};
-      atom.scale    = 0.1;
+      atom.scale    = 0.3;
       game.selected = game.atoms.size();
       game.atoms.push_back(atom);
     }
   };
 
-  init_window(win, {800, 600}, "Symchem");
+  init_window(win, {800, 800}, "Symchem");
   set_blending(true);
   init_game(game);
   run_draw_loop(win, [&game](Window& win) { draw(win, game); });
