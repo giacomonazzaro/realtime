@@ -328,7 +328,7 @@ struct b2Rot
 	}
 
 	/// Sine and cosine
-	float s, c;
+	float c, s;
 };
 
 /// A transform contains translation and rotation. It is used to represent

@@ -95,8 +95,8 @@ void draw(Window& win, Game& game) {
       Uniform("color", vec3f(1, 1, 1)),
       // Uniform("position", atom.position),
       // Uniform("rotation", atom.rotation),
-      Uniform("position", vec2f{frame.p.x, frame.p.y}),
-      Uniform("rotation", vec2f{frame.q.c, frame.q.s}),
+      Uniform("position", vec2f(&frame.p)),
+      Uniform("rotation", vec2f(&frame.q.c)),
 
       Uniform("scale", atom.scale),
       Uniform("id", i),

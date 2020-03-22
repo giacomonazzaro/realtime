@@ -239,6 +239,7 @@ struct vec2f {
 
   vec2f() {}
   vec2f(float x, float y) : x{x}, y{y} {}
+  vec2f(void* v) : x{*((float*)v + 0)}, y{*((float*)v + 1)} {}
   explicit vec2f(float v) : x{v}, y{v} {}
 
   float&       operator[](int i) { return (&x)[i]; }
@@ -1749,7 +1750,7 @@ inline frame3f rotation_frame(const mat3f& rot) {
 
 // Lookat frame. Z-axis can be inverted with inv_xz.
 inline frame3f lookat_frame(const vec3f& eye, const vec3f& center,
-  const vec3f& up = {0, 1, 0}, bool inv_xz = false) {
+    const vec3f& up = {0, 1, 0}, bool inv_xz = false) {
   auto w = normalize(eye - center);
   auto u = normalize(cross(up, w));
   auto v = normalize(cross(w, u));
