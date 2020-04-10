@@ -92,6 +92,27 @@ enum struct Key : int {
   world_2       = 162   //  non-us #2
 };
 
+struct Joystick {
+  vec2f left_stick, right_stick;
+  float left_trigger, right_trigger;
+  bool  buttons[15];
+  int   id = -1;
+
+  bool cross() const;
+  bool circle() const;
+  bool triangle() const;
+  bool square() const;
+  bool left_bumper() const;
+  bool right_bumper() const;
+  bool start() const;
+  bool back() const;
+  bool guide() const;
+  bool A() const;
+  bool B() const;
+  bool X() const;
+  bool Y() const;
+};
+
 // Input state
 struct Input {
   bool     mouse_left        = false;  // left button
@@ -131,11 +152,12 @@ struct Callbacks {
 
 // OpenGL window wrapper
 struct Window {
-  string      title      = "";
-  GLFWwindow* glfw       = nullptr;
-  Input       input      = {};
-  Callbacks   callbacks  = {};
-  vec4f       background = {0.15f, 0.15f, 0.15f, 1.0f};
+  string           title      = "";
+  GLFWwindow*      glfw       = nullptr;
+  Input            input      = {};
+  Callbacks        callbacks  = {};
+  vector<Joystick> joysticks  = {};
+  vec4f            background = {0.15f, 0.15f, 0.15f, 1.0f};
 
   vec2i size                 = {0, 0};
   vec4i framebuffer_viewport = {0, 0, 0, 0};
@@ -161,6 +183,9 @@ bool  is_key_pressed(const Window& win, Key key);
 void update_window_size(Window& win);
 void update_input(Input& input, const Window& win);
 void update_input(Window& win);
+void update_joystick_input(vector<Joystick>& joysticks, Window& win);
+void update_joystick_input(Window& win);
+
 void poll_events(const Window& win, bool wait);
 void swap_buffers(const Window& win);
 void run_draw_loop(

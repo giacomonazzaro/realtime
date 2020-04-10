@@ -73,6 +73,36 @@ void update_camera(frame3f& frame, float& focus, const Window& win) {
 //  if (win.scroll_cb) win.scroll_cb(win, (float)yoffset);
 //}
 
+void update_joysticks(Window& win) {
+  win.joysticks.clear();
+  const int max_joysticks = 16;
+  for (int i = 0; i < max_joysticks; i++) {
+    auto present    = glfwJoystickPresent(i);
+    auto is_gamepad = glfwJoystickIsGamepad(i);
+
+    if (present and is_gamepad) {
+      auto joystick = Joystick{};
+      joystick.id   = i;
+      win.joysticks.push_back(joystick);
+    }
+  }
+}
+// clang-format off
+bool Joystick::cross() const { return buttons[GLFW_GAMEPAD_BUTTON_CIRCLE]; }
+bool Joystick::circle() const { return buttons[GLFW_GAMEPAD_BUTTON_SQUARE]; }
+bool Joystick::triangle() const { return buttons[GLFW_GAMEPAD_BUTTON_TRIANGLE]; }
+bool Joystick::square() const { return buttons[GLFW_GAMEPAD_BUTTON_CROSS]; }
+bool Joystick::left_bumper() const { return buttons[GLFW_GAMEPAD_BUTTON_LEFT_BUMPER]; }
+bool Joystick::right_bumper() const { return buttons[GLFW_GAMEPAD_BUTTON_RIGHT_BUMPER]; }
+bool Joystick::start() const { return buttons[GLFW_GAMEPAD_BUTTON_START]; }
+bool Joystick::back() const { return buttons[GLFW_GAMEPAD_BUTTON_BACK]; }
+bool Joystick::guide() const { return buttons[GLFW_GAMEPAD_BUTTON_GUIDE]; }
+bool Joystick::A() const { return buttons[GLFW_GAMEPAD_BUTTON_A]; }
+bool Joystick::B() const { return buttons[GLFW_GAMEPAD_BUTTON_B]; }
+bool Joystick::X() const { return buttons[GLFW_GAMEPAD_BUTTON_X]; }
+bool Joystick::Y() const { return buttons[GLFW_GAMEPAD_BUTTON_Y]; }
+// clang-format on
+
 void init_window(Window& win, const vec2i& size, const string& title) {
   // init glfw
   if (!glfwInit())
@@ -135,6 +165,10 @@ void init_window(Window& win, const vec2i& size, const string& title) {
         });
   }
 
+  // TODO
+  // glfwSetJoystickCallback([](int id, int event) { update_joysticks(win); });
+  update_joysticks(win);
+
   glfwSetWindowSizeCallback(
       win.glfw, [](GLFWwindow* glfw, int width, int height) {
         auto win = (Window*)glfwGetWindowUserPointer(glfw);
@@ -196,6 +230,7 @@ void run_draw_loop(Window& win, std::function<void(Window&)> draw, bool wait) {
   while (!should_window_close(win)) {
     update_window_size(win);
     update_input(win.input, win);
+    update_joystick_input(win);
     draw(win);
     swap_buffers(win);
     poll_events(win, wait);
@@ -274,6 +309,29 @@ void update_input(Input& input, const Window& win) {
 }
 
 void update_input(Window& win) { update_input(win.input, win); }
+
+void update_joystick_input(vector<Joystick>& joysticks, Window& win) {
+  for (auto& joystick : joysticks) {
+    GLFWgamepadstate state;
+    if (glfwGetGamepadState(joystick.id, &state)) {
+      int  count;
+      auto axes              = glfwGetJoystickAxes(joystick.id, &count);
+      joystick.left_stick    = {axes[0], -axes[1]};
+      joystick.right_stick   = {axes[2], -axes[5]};
+      joystick.left_trigger  = axes[4];
+      joystick.right_trigger = axes[3];
+
+      auto buttons = glfwGetJoystickButtons(joystick.id, &count);
+      for (int i = 0; i < count; i++) {
+        joystick.buttons[i] = buttons[i];
+      }
+    }
+  }
+}
+
+void update_joystick_input(Window& win) {
+  update_joystick_input(win.joysticks, win);
+}
 
 void swap_buffers(const Window& win) { glfwSwapBuffers(win.glfw); }
 
