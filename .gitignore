@@ -1,6 +1,7 @@
 bin
 cmake
 build
+data
 cmake-build-debug
 cmake-build-release
 .idea
@@ -9,6 +10,4 @@ cmake-build-release
 *.exr
 *.png
 .vscode/ipch/
-yocto1/
-apps1/
-tests1/
+
