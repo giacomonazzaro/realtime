@@ -263,6 +263,8 @@ void update_input(Input& input, const Window& win) {
                           io->WantCaptureKeyboard;
   }
 
+  input.is_window_focused = glfwGetWindowAttrib(win.glfw, GLFW_FOCUSED) != 0;
+
   // time
   input.clock_last = input.clock_now;
   input.clock_now =

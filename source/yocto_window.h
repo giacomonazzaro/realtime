@@ -94,20 +94,20 @@ enum struct Key : int {
 
 // Input state
 struct Input {
-  bool     mouse_left     = false;  // left button
-  bool     mouse_right    = false;  // right button
-  bool     mouse_middle   = false;  // middle button
-  vec2f    mouse_pos      = {};     // position excluding gui
-  vec2f    mouse_last     = {};     // last mouse position excluding gui
-  vec2f    mouse_delta    = {};     // last mouse delta excluding gui
-  bool     modifier_alt   = false;  // alt modifier
-  bool     modifier_ctrl  = false;  // ctrl modifier
-  bool     modifier_shift = false;  // shift modifier
-  bool     is_gui_active  = false;  // gui is active
-  uint64_t clock_now      = 0;      // clock now
-  uint64_t clock_last     = 0;      // clock last
-  double   time_now       = 0;      // time now
-  double   time_delta     = 0;      // time delta
+  bool     mouse_left        = false;  // left button
+  bool     mouse_right       = false;  // right button
+  bool     mouse_middle      = false;  // middle button
+  vec2f    mouse_pos         = {};     // position excluding gui
+  vec2f    mouse_last        = {};     // last mouse position excluding gui
+  bool     modifier_alt      = false;  // alt modifier
+  bool     modifier_ctrl     = false;  // ctrl modifier
+  bool     modifier_shift    = false;  // shift modifier
+  bool     is_window_focused = false;  // window is focused
+  bool     is_gui_active     = false;  // gui is active
+  uint64_t clock_now         = 0;      // clock now
+  uint64_t clock_last        = 0;      // clock last
+  double   time_now          = 0;      // time now
+  double   time_delta        = 0;      // time delta
 };
 
 struct Window;

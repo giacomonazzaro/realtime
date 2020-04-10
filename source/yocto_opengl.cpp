@@ -1243,10 +1243,10 @@ Shape make_regular_polygon(int num_sides) {
     positions[i] /= 2 * yocto::sin(pif / num_sides);
     // yocto::tan(pif * 2 - 2 * pif / (num_sides * 2));
   }
-  auto values   = vector<float>(positions.size(), 1.0f);
-  values.back() = 0;
+  // auto values   = vector<float>(positions.size(), 1.0f);
+  // values.back() = 0;
   add_vertex_attribute(shape, positions);
-  add_vertex_attribute(shape, values);
+  // add_vertex_attribute(shape, values);
   init_elements(shape, triangles);
   return shape;
 }

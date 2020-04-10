@@ -1,14 +1,22 @@
 #version 330
-out vec4 result;
-uniform vec3 color;
+in vec2 pos;
 in float value;
+out vec4 result;
+
+uniform vec3 color;
 uniform float scale;
 uniform int selected;
 uniform int id;
+uniform int type;
 
 void main() {
-    float border = smoothstep(0.0, 0.02 / scale, 1 - value);
-    vec3 c = mix(vec3(0), color, border);
-    result = vec4(c, 1);
-    if(id == selected) result = vec4(1,0,0,1);
+    float v = value;
+    if(type == 3) {
+        v = length(pos);
+    }
+    float alpha = 1 - smoothstep(0.99, 1.0, v);
+    float border = 1 - smoothstep(0.9, 1.0, v);
+    vec3 fill = color;
+    if(id == selected) fill *= vec3(1, 0.5, 0.5);
+    result = vec4(fill * border, alpha);
 }

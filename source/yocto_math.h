@@ -240,6 +240,7 @@ struct vec2f {
   vec2f() {}
   vec2f(float x, float y) : x{x}, y{y} {}
   vec2f(void* v) : x{*((float*)v + 0)}, y{*((float*)v + 1)} {}
+  vec2f(const void* v) : x{*((float*)v + 0)}, y{*((float*)v + 1)} {}
   explicit vec2f(float v) : x{v}, y{v} {}
 
   float&       operator[](int i) { return (&x)[i]; }
