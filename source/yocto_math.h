@@ -194,6 +194,11 @@ inline float max(float a, float b) { return (a > b) ? a : b; }
 inline float clamp(float a, float min_, float max_) {
   return min(max(a, min_), max_);
 }
+
+inline float smoothstep(float a, float b, float x) {
+  float t = clamp((x - a) / (b - a), 0.0, 1.0);
+  return t * t * (3.0 - 2.0 * t);
+}
 inline float lerp(float a, float b, float u) { return a * (1 - u) + b * u; }
 inline float radians(float a) { return a * pif / 180; }
 inline float degrees(float a) { return a * 180 / pif; }
@@ -1189,6 +1194,9 @@ inline mat3f inverse(const mat3f& a) {
   return adjoint(a) * (1 / determinant(a));
 }
 
+inline mat2f rotation_mat(const vec2f& rot) {
+  return {{rot.x, rot.y}, {-rot.y, rot.x}};
+}
 inline mat2f rotation_mat(float angle) {
   auto s = sin(angle), c = cos(angle);
   return {{c, s}, {-s, c}};
