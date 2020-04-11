@@ -1,6 +1,6 @@
-#include "yocto_window.h"
+#include "window.h"
 
-#include <graphics/yocto_commonio.h>
+#include <graphics/commonio.h>
 
 #ifdef __APPLE__
 #define GL_SILENCE_DEPRECATION

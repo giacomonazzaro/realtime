@@ -35,10 +35,7 @@
 // INCLUDES
 // -----------------------------------------------------------------------------
 
-#include "yocto_modelio.h"
-
-#include "yocto_commonio.h"
-#include "yocto_image.h"
+#include "modelio.h"
 
 #include <algorithm>
 #include <cinttypes>
@@ -46,6 +43,9 @@
 #include <cstdarg>
 #include <limits>
 #include <string_view>
+
+#include "commonio.h"
+#include "image.h"
 
 #define CGLTF_IMPLEMENTATION
 #include "ext/cgltf.h"

@@ -13,10 +13,10 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 add_library(graphics
-    graphics/yocto_math.h
-    graphics/yocto_common.h graphics/yocto_commonio.h 
-    graphics/yocto_modelio.h graphics/yocto_modelio.cpp
-    graphics/yocto_image.h graphics/yocto_image.cpp
+    graphics/math.h
+    graphics/common.h graphics/commonio.h 
+    graphics/modelio.h graphics/modelio.cpp
+    graphics/image.h graphics/image.cpp
 )
 
 target_include_directories(graphics PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")

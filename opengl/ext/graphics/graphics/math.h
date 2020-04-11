@@ -1388,10 +1388,7 @@ namespace yocto {
 
 // Quaternions to represent rotations
 struct quat4f {
-  float x = 0;
-  float y = 0;
-  float z = 0;
-  float w = 0;
+  float x, y, z, w;
 
   // constructors
   quat4f() : x{0}, y{0}, z{0}, w{1} {}
@@ -1557,8 +1554,8 @@ namespace yocto {
 inline const auto ray_eps = 1e-4f;
 
 struct ray2f {
-  vec2f o    = {0, 0};
-  vec2f d    = {0, 1};
+  vec2f o;
+  vec2f d;
   float tmin = ray_eps;
   float tmax = flt_max;
 
@@ -1570,10 +1567,10 @@ struct ray2f {
 
 // Rays with origin, direction and min/max t value.
 struct ray3f {
-  vec3f o    = {0, 0, 0};
-  vec3f d    = {0, 0, 1};
-  float tmin = ray_eps;
-  float tmax = flt_max;
+  vec3f o;
+  vec3f d;
+  float tmin;
+  float tmax;
 
   ray3f() {}
   ray3f(const vec3f& o, const vec3f& d, float tmin = ray_eps,

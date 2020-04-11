@@ -84,11 +84,11 @@
 // INCLUDES
 // -----------------------------------------------------------------------------
 
-#include "yocto_common.h"
-#include "yocto_math.h"
-
 #include <chrono>
 #include <cstdio>
+
+#include "common.h"
+#include "math.h"
 
 // -----------------------------------------------------------------------------
 // PRINT/FORMATTING UTILITIES

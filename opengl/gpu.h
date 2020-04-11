@@ -5,8 +5,8 @@
 // INCLUDES
 // -----------------------------------------------------------------------------
 
-#include <graphics/yocto_image.h>
-#include <graphics/yocto_math.h>
+#include <graphics/image.h>
+#include <graphics/math.h>
 
 #include <functional>   // std::function
 #include <type_traits>  // std::is_floating_point

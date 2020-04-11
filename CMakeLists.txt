@@ -34,8 +34,8 @@ add_definitions(-DIMGUI_IMPL_OPENGL_LOADER_GLAD)
 add_subdirectory(opengl/ext/graphics)
 
 add_library(opengl
-    opengl/yocto_opengl.h opengl/yocto_opengl.cpp opengl/yocto_window.h opengl/yocto_window.cpp
-    # yocto_font.h yocto_font.cpp
+    opengl/gpu.h opengl/gpu.cpp opengl/window.h opengl/window.cpp
+    # font.h font.cpp
     opengl/ext/imgui/imgui.cpp opengl/ext/imgui/imgui_draw.cpp opengl/ext/imgui/imgui_widgets.cpp
     opengl/ext/imgui/imgui_impl_glfw.cpp opengl/ext/imgui/imgui_impl_opengl3.cpp opengl/ext/glad/glad.c)
 

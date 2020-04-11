@@ -1,7 +1,7 @@
-#include "yocto_opengl.h"
+#include "gpu.h"
 
-#include <graphics/yocto_common.h>
-#include <graphics/yocto_commonio.h>
+#include <graphics/common.h>
+#include <graphics/commonio.h>
 
 #include <algorithm>
 #include <cstdarg>

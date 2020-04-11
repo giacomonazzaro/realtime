@@ -4,8 +4,8 @@
 #include <functional>
 using std::function;
 
-#include <graphics/yocto_common.h>
-#include <graphics/yocto_math.h>
+#include <graphics/common.h>
+#include <graphics/math.h>
 
 // forward declaration
 struct GLFWwindow;

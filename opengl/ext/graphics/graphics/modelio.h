@@ -95,10 +95,10 @@
 // INCLUDES
 // -----------------------------------------------------------------------------
 
-#include "yocto_common.h"
-#include "yocto_math.h"
-
 #include <algorithm>
+
+#include "common.h"
+#include "math.h"
 
 // -----------------------------------------------------------------------------
 // FILE AND PROPERTY HANDLING
@@ -133,7 +133,7 @@ void close_file(file_wrapper& fs);
 namespace yocto {
 
 struct ioshape {
-  vector<int> points;
+  vector<int>   points;
   vector<vec2i> lines;
   vector<vec3i> triangles;
   vector<vec4i> quads;
@@ -152,8 +152,8 @@ void load_shape(const string& filename, vector<int>& points,
 inline ioshape load_shape(const string& filename, bool flip_texcoord = false) {
   auto shape = ioshape{};
   load_shape(filename, shape.points, shape.lines, shape.triangles, shape.quads,
-    shape.positions, shape.normals, shape.texcoords,
-    shape.colors, shape.radius, flip_texcoord);
+      shape.positions, shape.normals, shape.texcoords, shape.colors,
+      shape.radius, flip_texcoord);
   return shape;
 }
 
