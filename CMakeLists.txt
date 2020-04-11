@@ -31,14 +31,18 @@ if(UNIX AND NOT APPLE)
 endif(UNIX AND NOT APPLE)
 add_definitions(-DIMGUI_IMPL_OPENGL_LOADER_GLAD)
 
+add_subdirectory(../graphics graphics)
 
 add_library(opengl
-    source/yocto_opengl.h source/yocto_opengl.cpp source/yocto_image.cpp source/yocto_modelio.cpp source/yocto_window.cpp
+    opengl/yocto_opengl.h opengl/yocto_opengl.cpp opengl/yocto_window.h opengl/yocto_window.cpp
     # yocto_font.h yocto_font.cpp
-    source/ext/imgui/imgui.cpp source/ext/imgui/imgui_draw.cpp source/ext/imgui/imgui_widgets.cpp
-    source/ext/imgui/imgui_impl_glfw.cpp source/ext/imgui/imgui_impl_opengl3.cpp source/ext/glad/glad.c)
+    opengl/ext/imgui/imgui.cpp opengl/ext/imgui/imgui_draw.cpp opengl/ext/imgui/imgui_widgets.cpp
+    opengl/ext/imgui/imgui_impl_glfw.cpp opengl/ext/imgui/imgui_impl_opengl3.cpp opengl/ext/glad/glad.c)
 
-target_include_directories(opengl PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/source")
+target_link_libraries(opengl graphics)
+
+
+target_include_directories(opengl PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
 target_compile_definitions(opengl PUBLIC OPENGL_VERSION=1)
 
