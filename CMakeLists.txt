@@ -31,7 +31,7 @@ if(UNIX AND NOT APPLE)
 endif(UNIX AND NOT APPLE)
 add_definitions(-DIMGUI_IMPL_OPENGL_LOADER_GLAD)
 
-add_subdirectory(../graphics graphics)
+add_subdirectory(opengl/ext/graphics)
 
 add_library(opengl
     opengl/yocto_opengl.h opengl/yocto_opengl.cpp opengl/yocto_window.h opengl/yocto_window.cpp
