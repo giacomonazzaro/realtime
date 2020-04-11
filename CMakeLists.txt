@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 3.9)
-project (my-opengl)
+project (realtime)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -31,22 +31,22 @@ if(UNIX AND NOT APPLE)
 endif(UNIX AND NOT APPLE)
 add_definitions(-DIMGUI_IMPL_OPENGL_LOADER_GLAD)
 
-add_subdirectory(opengl/ext/graphics)
+add_subdirectory(realtime/ext/graphics)
 
-add_library(opengl
-    opengl/gpu.h opengl/gpu.cpp opengl/window.h opengl/window.cpp
+add_library(realtime
+    realtime/gpu.h realtime/gpu.cpp realtime/window.h realtime/window.cpp
     # font.h font.cpp
-    opengl/ext/imgui/imgui.cpp opengl/ext/imgui/imgui_draw.cpp opengl/ext/imgui/imgui_widgets.cpp
-    opengl/ext/imgui/imgui_impl_glfw.cpp opengl/ext/imgui/imgui_impl_opengl3.cpp opengl/ext/glad/glad.c)
+    realtime/ext/imgui/imgui.cpp realtime/ext/imgui/imgui_draw.cpp realtime/ext/imgui/imgui_widgets.cpp
+    realtime/ext/imgui/imgui_impl_glfw.cpp realtime/ext/imgui/imgui_impl_opengl3.cpp realtime/ext/glad/glad.c)
 
-target_link_libraries(opengl graphics)
+target_link_libraries(realtime graphics)
 
 
-target_include_directories(opengl PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+target_include_directories(realtime PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
-target_compile_definitions(opengl PUBLIC OPENGL_VERSION=1)
+target_compile_definitions(realtime PUBLIC OPENGL_VERSION=1)
 
 # 
 #       How to link this library!!!
 # 
-# target_link_libraries(main opengl ${OPENGL_gl_LIBRARY} ${GLFW_LIBRARY} ${GL_EXTRA_LIBRARIES})
+# target_link_libraries(main realtime ${OPENGL_gl_LIBRARY} ${GLFW_LIBRARY} ${GL_EXTRA_LIBRARIES})

@@ -38,7 +38,6 @@ inline Camera make_framing_camera(const vector<vec3f>& positions) {
 inline void run_viewer(const ioshape& mesh) {
   // Init window.
   auto win = Window();
-
   init_window(win, {300, 300}, "mesh viewer");
 
   // Init camera.
