@@ -923,6 +923,8 @@ pbrt_value make_pbrt_value(const string& name, int value,
     pbrt_value_type type = pbrt_value_type::integer);
 pbrt_value make_pbrt_value(const string& name, float value,
     pbrt_value_type type = pbrt_value_type::real);
+pbrt_value make_pbrt_value(const string& name, double value,
+    pbrt_value_type type = pbrt_value_type::real);
 pbrt_value make_pbrt_value(const string& name, const vec2f& value,
     pbrt_value_type type = pbrt_value_type::point2);
 pbrt_value make_pbrt_value(const string& name, const vec3f& value,
