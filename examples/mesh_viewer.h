@@ -3,9 +3,9 @@
 #include <vector>
 using namespace std;
 
-#include "../source/yocto_modelio.h"
-#include "../source/yocto_opengl.h"
-#include "../source/yocto_window.h"
+#include <graphics/modelio.h>
+#include <realtime/gpu.h>
+#include <realtime/window.h>
 using namespace yocto;
 using namespace opengl;
 
