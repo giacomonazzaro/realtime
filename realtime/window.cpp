@@ -24,6 +24,8 @@
 namespace opengl {
 
 void update_camera(frame3f& frame, float& focus, const Window& win) {
+  if (win.input.is_gui_active) return;
+
   auto last_pos    = win.input.mouse_last;
   auto mouse_pos   = win.input.mouse_pos;
   auto mouse_left  = win.input.mouse_left;
@@ -37,7 +39,7 @@ void update_camera(frame3f& frame, float& focus, const Window& win) {
     auto pan    = zero2f;
     auto rotate = zero2f;
     if (mouse_left && !shift_down) rotate = (mouse_pos - last_pos) / 100.0f;
-    if (mouse_right) dolly = (mouse_pos.x - last_pos.x) / 100.0f;
+    if (mouse_right) dolly = (mouse_pos.y - last_pos.y) / 100.0f;
     if (mouse_left && shift_down) pan = (mouse_pos - last_pos) * focus / 200.0f;
     pan.x    = -pan.x;
     rotate.y = -rotate.y;
@@ -239,7 +241,7 @@ void run_draw_loop(Window& win, std::function<void(Window&)> draw, bool wait) {
 
 vec2f get_mouse_pos_normalized(const Window& win, bool isometric) {
   auto& pos    = win.input.mouse_pos;
-  auto  size   = win.size;
+  auto  size   = vec2f(win.size.x, win.size.y);
   auto  result = vec2f{2 * (pos.x / size.x) - 1, 1 - 2 * (pos.y / size.y)};
   if (isometric) {
     result.x *= float(win.size.x) / float(win.size.y);
@@ -292,11 +294,11 @@ void update_input(Input& input, const Window& win) {
   input.modifier_ctrl = glfwGetKey(glfw, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS ||
                         glfwGetKey(glfw, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS;
 
-  if (win.widgets_width) {
-    auto io             = &ImGui::GetIO();
-    input.is_gui_active = io->WantTextInput || io->WantCaptureMouse ||
-                          io->WantCaptureKeyboard;
-  }
+  // if (win.widgets_width) {
+  auto io             = &ImGui::GetIO();
+  input.is_gui_active = io->WantTextInput || io->WantCaptureMouse ||
+                        io->WantCaptureKeyboard;
+  // }
 
   input.is_window_focused = glfwGetWindowAttrib(win.glfw, GLFW_FOCUSED) != 0;
 
@@ -353,6 +355,28 @@ void init_glwidgets(Window& win, int width, bool left) {
   ImGui::StyleColorsDark();
   win.widgets_width = width;
   win.widgets_left  = left;
+}
+
+void gui_begin(const Window& win) {
+  ImGui_ImplOpenGL3_NewFrame();
+  ImGui_ImplGlfw_NewFrame();
+  ImGui::NewFrame();
+  auto win_size = win.size;  // get_glwindow_size(win, false);
+  if (win.widgets_left) {
+    ImGui::SetNextWindowPos({0, 0});
+    ImGui::SetNextWindowSize({(float)win.widgets_width, (float)win_size.y});
+  } else {
+    ImGui::SetNextWindowPos({(float)(win_size.x - win.widgets_width), 0});
+    ImGui::SetNextWindowSize({(float)win.widgets_width, (float)win_size.y});
+  }
+  ImGui::SetNextWindowCollapsed(false);
+  ImGui::SetNextWindowBgAlpha(1);
+}
+
+void gui_end(const Window& win) {
+  ImGui::End();
+  ImGui::Render();
+  ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
 bool begin_header(Window& win, const char* lbl) {

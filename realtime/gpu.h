@@ -1,5 +1,5 @@
-#ifndef _YOCTO_OPENGL_
-#define _YOCTO_OPENGL_
+#ifndef _REALTIME_GPU_
+#define _REALTIME_GPU_
 
 // -----------------------------------------------------------------------------
 // INCLUDES
@@ -10,6 +10,7 @@
 
 #include <functional>   // std::function
 #include <type_traits>  // std::is_floating_point
+
 
 // -----------------------------------------------------------------------------
 // LOW-LEVEL OPENGL OBJECTS
@@ -107,13 +108,12 @@ void draw_image(Image& glimage, const draw_image_params& params);
 
 // Opengl caemra
 struct Camera {
-  frame3f frame  = identity3x4f;
-  float   lens   = 0.050;
-  float   asepct = 1;
-  float   film   = 0.036;
-  float   near   = 0.001;
-  float   far    = 10000;
-  float   focus  = flt_max;
+  frame3f frame = identity3x4f;
+  float   lens  = 0.050;
+  float   film  = 0.036;
+  float   near  = 0.001;
+  float   far   = 10000;
+  float   focus = flt_max;
 };
 
 // Opengl material
@@ -193,6 +193,7 @@ void set_viewport(const vec4i& viewport);
 
 void set_wireframe(bool enabled);
 void set_blending(bool enabled);
+void set_point_size(int size);
 
 void load_shader(Shader& shader, const string& vertex_filename,
     const string& fragment_filename);

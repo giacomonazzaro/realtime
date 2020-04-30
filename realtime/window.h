@@ -1,5 +1,5 @@
-#ifndef YOCTO_WINDOW
-#define YOCTO_WINDOW
+#ifndef _REALTIME_WINDOW_
+#define _REALTIME_WINDOW_
 
 #include <functional>
 using std::function;
@@ -199,6 +199,9 @@ void update_camera(frame3f& frame, float& focus, const Window& win);
 
 bool begin_header(Window& win, const char* title);
 void end_header(Window& win);
+
+void gui_begin(const Window& win);
+void gui_end(const Window& win);
 
 void gui_label(Window& win, const char* lbl, const std::string& text);
 

@@ -3,6 +3,8 @@
 #include <graphics/common.h>
 #include <graphics/commonio.h>
 
+//
+
 #include <algorithm>
 #include <cstdarg>
 #include <deque>
@@ -63,6 +65,8 @@ void set_blending(bool enabled) {
     glDisable(GL_BLEND);
   }
 }
+
+void set_point_size(int size) { glPointSize(size); }
 
 // -----------------------------------------------------------------------------
 // HIGH-LEVEL OPENGL IMAGE DRAWING
@@ -1299,8 +1303,8 @@ Shape make_vector_field(const vector<vec3f>& vector_field,
     auto normal = triangle_normal(x, y, z);
     normal *= scale;
     auto center    = (x + y + z) / 3;
-    auto from      = center + 0.001 * normal;
-    auto to        = from + (scale * vector_field[i]) + 0.001 * normal;
+    auto from      = center + 0.001f * normal;
+    auto to        = from + (scale * vector_field[i]) + 0.001f * normal;
     pos[i * 2]     = from;
     pos[i * 2 + 1] = to;
   }
@@ -1315,6 +1319,10 @@ Shape make_vector_field(const vector<vec3f>& vector_field,
 }
 
 void draw_shape(const Shape& shape) {
+  // @SPEED: This is for extra-safety, but may have
+  //         an impact with many draw calls 
+  if (!shape.id) return;
+
   bind_shape(shape);
 
   // draw strip of points, lines or triangles
@@ -1331,7 +1339,6 @@ void draw_shape(const Shape& shape) {
   // draw points, lines or triangles
   else {
     auto& elements = shape.elements;
-    // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elements.buffer_id);
     if (shape.type == Shape::type::points) {
       draw_points(elements);
     } else if (shape.type == Shape::type::lines) {
@@ -1345,7 +1352,7 @@ void draw_shape(const Shape& shape) {
 
 Camera make_lookat_camera(const vec3f& from, const vec3f& to, const vec3f& up) {
   auto camera  = Camera{};
-  camera.frame = lookat_frame(from, to);
+  camera.frame = lookat_frame(from, to, {0, 1, 0});
   camera.focus = length(from - to);
   return camera;
 }

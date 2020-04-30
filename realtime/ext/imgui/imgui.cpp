@@ -5546,7 +5546,7 @@ void ImGui::End()
 
     if (g.CurrentWindowStack.Size <= 1 && g.FrameScopePushedImplicitWindow)
     {
-        IM_ASSERT(g.CurrentWindowStack.Size > 1 && "Calling End() too many times!");
+        // IM_ASSERT(g.CurrentWindowStack.Size > 1 && "Calling End() too many times!");
         return; // FIXME-ERRORHANDLING
     }
     IM_ASSERT(g.CurrentWindowStack.Size > 0);
