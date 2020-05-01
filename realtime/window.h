@@ -7,17 +7,16 @@ using std::function;
 #include <graphics/common.h>
 #include <graphics/math.h>
 
-// forward declaration
+// Forward declaration
 struct GLFWwindow;
 
-namespace opengl {
+namespace window {
 using namespace yocto;
 
 enum struct Key : int {
-  // For printable keys, just use the constructor, like Key('*')
-  // For chars, always use upper case!
+  // For printable keys, just use the constructor, like Key('*').
+  // For letters, always use upper case, like Key('C').
 
-  // Function keys
   escape        = 256,
   enter         = 257,
   tab           = 258,
@@ -92,28 +91,7 @@ enum struct Key : int {
   world_2       = 162   //  non-us #2
 };
 
-struct Joystick {
-  vec2f left_stick, right_stick;
-  float left_trigger, right_trigger;
-  bool  buttons[15];
-  int   id = -1;
-
-  bool cross() const;
-  bool circle() const;
-  bool triangle() const;
-  bool square() const;
-  bool left_bumper() const;
-  bool right_bumper() const;
-  bool start() const;
-  bool back() const;
-  bool guide() const;
-  bool A() const;
-  bool B() const;
-  bool X() const;
-  bool Y() const;
-};
-
-// Input state
+// Data structure where all the inputs are stored between frames.
 struct Input {
   bool     mouse_left        = false;  // left button
   bool     mouse_right       = false;  // right button
@@ -131,8 +109,35 @@ struct Input {
   double   time_delta        = 0;      // time delta
 };
 
+// Data structure where the input of a joystick is stored.
+struct Joystick {
+  vec2f left_stick, right_stick;
+  float left_trigger, right_trigger;
+  bool  buttons[15];
+  int   id = -1;
+
+  // Handy interface. The mapping of buttons may be broken on some platform.
+  // Using the recommanded mapping from GLFW gave wrong results with a PS4
+  // Dualshock on a Mac. Change the implementation of these methods if needed.
+  bool cross() const;
+  bool circle() const;
+  bool triangle() const;
+  bool square() const;
+  bool left_bumper() const;
+  bool right_bumper() const;
+  bool start() const;
+  bool back() const;
+  bool guide() const;
+  bool A() const;
+  bool B() const;
+  bool X() const;
+  bool Y() const;
+};
+
+// Forward declaration.
 struct Window;
 
+// Callbacks of a window, grouped in a struct for convenience.
 struct Callbacks {
   // Called when the contents of a window is damaged and needs to be refreshed
   function<void(Window&)> refresh;
@@ -150,14 +155,13 @@ struct Callbacks {
   function<void(Window&, float amount)> scroll;
 };
 
-// OpenGL window wrapper
+// Info to open and handle a new window within the OS.
 struct Window {
-  string           title      = "";
-  GLFWwindow*      glfw       = nullptr;
-  Input            input      = {};
-  Callbacks        callbacks  = {};
-  vector<Joystick> joysticks  = {};
-  vec4f            background = {0.15f, 0.15f, 0.15f, 1.0f};
+  string           title     = "";
+  GLFWwindow*      glfw      = nullptr;
+  Input            input     = {};
+  vector<Joystick> joysticks = {};
+  Callbacks        callbacks = {};
 
   vec2i size                 = {0, 0};
   vec4i framebuffer_viewport = {0, 0, 0, 0};
@@ -165,6 +169,7 @@ struct Window {
   int   widgets_width        = 0;
   bool  widgets_left         = true;
 
+  // Shortcuts to run callbacks.
   void refresh() { callbacks.refresh(*this); }
   void drop(const vector<string>& names) { callbacks.drop(*this, names); }
   void key(Key key, bool pressed) { callbacks.key(*this, key, pressed); }
@@ -175,8 +180,7 @@ struct Window {
 void init_window(Window& win, const vec2i& size, const string& title);
 void delete_window(Window& win);
 
-bool should_window_close(const Window& win);
-
+bool  should_window_close(const Window& win);
 vec2f get_mouse_pos_normalized(const Window& win, bool isometric = false);
 bool  is_key_pressed(const Window& win, Key key);
 
@@ -189,14 +193,11 @@ void update_joystick_input(Window& win);
 void poll_events(const Window& win, bool wait);
 void swap_buffers(const Window& win);
 void run_draw_loop(
-    Window& win, std::function<void(Window&)> draw, bool wait = false);
+    Window& win, function<void(Window&)> draw, bool wait = false);
 
 void update_camera(frame3f& frame, float& focus, const Window& win);
 
-// -----------------------------------------------------------------------------
-// OPENGL WIDGETS
-// -----------------------------------------------------------------------------
-
+// Tools for building a user interface.
 bool begin_header(Window& win, const char* title);
 void end_header(Window& win);
 
@@ -316,6 +317,6 @@ void log_error(Window& win, const std::string& msg);
 void clear_log(Window& win);
 void gui_log(Window& win);
 
-}  // namespace opengl
+}  // namespace window
 
 #endif

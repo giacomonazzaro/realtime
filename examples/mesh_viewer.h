@@ -7,7 +7,7 @@ using namespace std;
 #include <realtime/gpu.h>
 #include <realtime/window.h>
 using namespace yocto;
-using namespace opengl;
+using namespace window;
 using namespace gpu;
 
 inline vector<vec3f> compute_normals(

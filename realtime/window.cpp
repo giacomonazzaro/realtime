@@ -21,7 +21,7 @@
 #define CUTE_FILES_IMPLEMENTATION
 #include "ext/cute_files.h"
 
-namespace opengl {
+namespace window {
 
 void update_camera(frame3f& frame, float& focus, const Window& win) {
   if (win.input.is_gui_active) return;
@@ -228,7 +228,7 @@ void poll_events(const Window& win, bool wait) {
     glfwPollEvents();
 }
 
-void run_draw_loop(Window& win, std::function<void(Window&)> draw, bool wait) {
+void run_draw_loop(Window& win, function<void(Window&)> draw, bool wait) {
   while (!should_window_close(win)) {
     update_window_size(win);
     update_input(win.input, win);
@@ -959,4 +959,4 @@ void gui_log(Window& win) {
   _log_mutex.unlock();
 }
 
-}  // namespace opengl
+}  // namespace window
