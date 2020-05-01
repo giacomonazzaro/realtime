@@ -191,10 +191,9 @@ inline const auto flt_eps = std::numeric_limits<float>::epsilon();
 inline float abs(float a) { return a < 0 ? -a : a; }
 inline float min(float a, float b) { return (a < b) ? a : b; }
 inline float max(float a, float b) { return (a > b) ? a : b; }
-inline float clamp(float a, float min_, float max_) {
-  return min(max(a, min_), max_);
+inline float clamp(float a, float low, float high) {
+  return min(max(a, low), high);
 }
-
 inline float smoothstep(float a, float b, float x) {
   float t = clamp((x - a) / (b - a), 0.0, 1.0);
   return t * t * (3.0 - 2.0 * t);
@@ -227,7 +226,7 @@ inline void  swap(float& a, float& b) { std::swap(a, b); }
 inline int  abs(int a) { return a < 0 ? -a : a; }
 inline int  min(int a, int b) { return (a < b) ? a : b; }
 inline int  max(int a, int b) { return (a > b) ? a : b; }
-inline int  clamp(int a, int min_, int max_) { return min(max(a, min_), max_); }
+inline int  clamp(int a, int low, int high) { return min(max(a, low), high); }
 inline int  pow2(int a) { return 1 << a; }
 inline void swap(int& a, int& b) { std::swap(a, b); }
 
