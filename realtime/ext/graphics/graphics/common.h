@@ -108,6 +108,7 @@ using hash_map = unordered_map<K, V>;
 
 // get time in nanoseconds - useful only to compute difference of times
 inline int64_t get_time();
+inline void    sleep(int ms);
 
 // -----------------------------------------------------------------------------
 // PYTHON-LIKE ITERATORS
@@ -221,6 +222,10 @@ privDefer<F> defer_func(F f) {
 // get time in nanoseconds - useful only to compute difference of times
 inline int64_t get_time() {
   return std::chrono::high_resolution_clock::now().time_since_epoch().count();
+}
+
+inline void sleep(int ms) {
+  std::this_thread::sleep_for(std::chrono::milliseconds(ms));
 }
 
 // -----------------------------------------------------------------------------
