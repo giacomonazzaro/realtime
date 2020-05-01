@@ -107,7 +107,7 @@ void delete_shader(Shader& shader);
 
 void   load_shader_code(Shader& shader);
 Shader make_shader_from_file(const string& vertex_filename,
-    const string& fragment_filename, bool abort_on_error = false);
+    const string& fragment_filename, bool abort_on_error = true);
 
 void bind_shader(const Shader& shader);
 void unbind_shader();
