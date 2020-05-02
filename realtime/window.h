@@ -192,6 +192,7 @@ void init_joysticks(vector<Joystick>& joysticks);
 void init_joysticks(Window& win);
 void update_joystick_input(vector<Joystick>& joysticks, const Window& win);
 void update_joystick_input(Window& win);
+void init_callbacks(Window& win);
 
 void poll_events(const Window& win, bool wait);
 void swap_buffers(const Window& win);

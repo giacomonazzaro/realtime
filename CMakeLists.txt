@@ -1,7 +1,7 @@
 cmake_minimum_required (VERSION 3.12)
 project (realtime)
 
-option(REALTIME_EXAMPLES "Build examples" OFF)
+option(REALTIME_EXAMPLES "Build examples" ON)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
@@ -12,6 +12,10 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
+# set_target_properties(realtime PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED YES)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 add_subdirectory(realtime/ext/graphics)
 
 add_library(realtime
@@ -20,7 +24,6 @@ add_library(realtime
     realtime/ext/imgui/imgui.cpp realtime/ext/imgui/imgui_draw.cpp realtime/ext/imgui/imgui_widgets.cpp
     realtime/ext/imgui/imgui_impl_glfw.cpp realtime/ext/imgui/imgui_impl_opengl3.cpp realtime/ext/glad/glad.c)
 
-set_target_properties(realtime PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED YES)
 
 if(APPLE)
     target_compile_options(realtime PRIVATE -Wall)
@@ -52,12 +55,12 @@ target_include_directories(realtime PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
 
 if(REALTIME_EXAMPLES)
-    add_executable(mesh_viewer ./examples/mesh_viewer.cpp)
+    add_executable(mesh_viewer ./examples/mesh_viewer.cpp ./examples/mesh_viewer.h)
     target_link_libraries(mesh_viewer realtime ${OPENGL_gl_LIBRARY} ${GLFW_LIBRARY} ${GL_EXTRA_LIBRARIES})
 
-    add_executable(image_viewer ./examples/image_viewer.cpp)
+    add_executable(image_viewer ./examples/image_viewer.cpp ./examples/image_viewer.h)
     target_link_libraries(image_viewer realtime ${OPENGL_gl_LIBRARY} ${GLFW_LIBRARY} ${GL_EXTRA_LIBRARIES})
 
-    add_executable(shadertoy ./examples/shadertoy.cpp)
+    add_executable(shadertoy ./examples/shadertoy.cpp ./examples/shadertoy.h)
     target_link_libraries(shadertoy realtime ${OPENGL_gl_LIBRARY} ${GLFW_LIBRARY} ${GL_EXTRA_LIBRARIES})
 endif(REALTIME_EXAMPLES)

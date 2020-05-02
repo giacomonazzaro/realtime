@@ -91,6 +91,27 @@ void init_window(Window& win, const vec2i& size, const string& title) {
   // set user data
   glfwSetWindowUserPointer(win.glfw, &win);
 
+  init_callbacks(win);
+
+  // TODO
+  // glfwSetJoystickCallback([](int id, int event) { update_joysticks(win); });
+
+  init_joysticks(win);
+
+  glfwSetWindowSizeCallback(
+      win.glfw, [](GLFWwindow* glfw, int width, int height) {
+        auto win = (Window*)glfwGetWindowUserPointer(glfw);
+        glfwGetWindowSize(win->glfw, &win->size.x, &win->size.y);
+        glfwGetFramebufferSize(win->glfw, &win->framebuffer_viewport.z,
+            &win->framebuffer_viewport.w);
+        win->framebuffer_viewport.x = 0;
+        win->framebuffer_viewport.y = 0;
+      });
+
+  update_window_size(win);
+}
+
+void init_callbacks(Window& win) {
   // set callbacks
   if (win.callbacks.refresh) {
     glfwSetWindowRefreshCallback(win.glfw, [](GLFWwindow* glfw) {
@@ -132,23 +153,6 @@ void init_window(Window& win, const vec2i& size, const string& title) {
           win->scroll((float)yoffset);
         });
   }
-
-  // TODO
-  // glfwSetJoystickCallback([](int id, int event) { update_joysticks(win); });
-
-  init_joysticks(win);
-
-  glfwSetWindowSizeCallback(
-      win.glfw, [](GLFWwindow* glfw, int width, int height) {
-        auto win = (Window*)glfwGetWindowUserPointer(glfw);
-        glfwGetWindowSize(win->glfw, &win->size.x, &win->size.y);
-        glfwGetFramebufferSize(win->glfw, &win->framebuffer_viewport.z,
-            &win->framebuffer_viewport.w);
-        win->framebuffer_viewport.x = 0;
-        win->framebuffer_viewport.y = 0;
-      });
-
-  update_window_size(win);
 }
 
 void delete_window(Window& win) {
