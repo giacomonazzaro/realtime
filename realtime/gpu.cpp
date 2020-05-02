@@ -607,7 +607,7 @@ void delete_shape(Shape& shape) {
   for (auto& attribute : shape.vertex_attributes) {
     delete_arraybuffer(attribute);
   }
-  delete_arraybuffer(shape.elements);
+  delete_arraybuffer(shape.primitives);
   glDeleteVertexArrays(1, &shape.id);
 }
 
@@ -668,7 +668,7 @@ Shape make_regular_polygon_shape(int num_sides) {
   // values.back() = 0;
   add_vertex_attribute(shape, positions);
   // add_vertex_attribute(shape, values);
-  init_elements(shape, triangles);
+  init_primitives(shape, triangles);
   return shape;
 }
 
@@ -678,7 +678,7 @@ Shape make_mesh_shape(const vector<vec3i>& triangles,
   init_shape(shape);
   add_vertex_attribute(shape, positions);
   add_vertex_attribute(shape, normals);
-  init_elements(shape, triangles);
+  init_primitives(shape, triangles);
   return shape;
 }
 
@@ -701,7 +701,7 @@ Shape make_vector_field_shape(
   for (int i = 0; i < elements.size(); i++) {
     elements[i] = {2 * i, 2 * i + 1};
   }
-  init_elements(shape, elements);
+  init_primitives(shape, elements);
   return shape;
 }
 
@@ -732,7 +732,7 @@ Shape make_vector_field_shape(const vector<vec3f>& vector_field,
   for (int i = 0; i < elements.size(); i++) {
     elements[i] = {2 * i, 2 * i + 1};
   }
-  init_elements(shape, elements);
+  init_primitives(shape, elements);
   return shape;
 }
 
@@ -744,7 +744,7 @@ void draw_shape(const Shape& shape) {
   bind_shape(shape);
 
   // draw strip of points, lines or triangles
-  if (!shape.elements) {
+  if (!shape.primitives) {
     auto& positions = shape.vertex_attributes[0];
     if (shape.type == Shape::type::points) {
       draw_point_strip(positions);
@@ -756,7 +756,7 @@ void draw_shape(const Shape& shape) {
   }
   // draw points, lines or triangles
   else {
-    auto& elements = shape.elements;
+    auto& elements = shape.primitives;
     if (shape.type == Shape::type::points) {
       draw_points(elements);
     } else if (shape.type == Shape::type::lines) {
@@ -779,14 +779,13 @@ mat4f make_view_matrix(const Camera& camera) {
   return mat4f(inverse(camera.frame));
 }
 
-mat4f make_projection_matrix(
-    const Camera& camera, const vec2i& viewport, float near, float far) {
+mat4f make_projection_matrix(const Camera& camera, const vec2i& viewport) {
   auto camera_aspect = (float)viewport.x / (float)viewport.y;
   auto camera_yfov =
       camera_aspect >= 0
           ? (2 * yocto::atan(camera.film / (camera_aspect * 2 * camera.lens)))
           : (2 * yocto::atan(camera.film / (2 * camera.lens)));
-  return perspective_mat(camera_yfov, camera_aspect, near, far);
+  return perspective_mat(camera_yfov, camera_aspect, camera.near, camera.far);
 }
 
 Rendertarget make_render_target(

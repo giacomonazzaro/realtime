@@ -198,7 +198,7 @@ void set_uniform(const Shader& shader, const Uniform<Type>& u,
 // create the primivies. If empty, the shape is drawn as a "strip".
 struct Shape {
   vector<Arraybuffer> vertex_attributes = {};
-  Arraybuffer         elements          = {};
+  Arraybuffer         primitives        = {};
   uint                id                = 0;
 
   enum struct type { points, lines, triangles };
@@ -235,19 +235,19 @@ int add_vertex_attribute(Shape& shape, const vector<T>& data) {
   assert(shape.vertex_attributes.empty() ||
          shape.vertex_attributes[0].num == data.size());
   bind_shape(shape);
-  int index = shape.vertex_attributes.size();
-  shape.vertex_attributes.push_back({});
-  init_arraybuffer(shape.vertex_attributes.back(), data);
+  int   index     = shape.vertex_attributes.size();
+  auto& attribute = shape.vertex_attributes.emplace_back();
+  init_arraybuffer(attribute, data);
   int elem_size = sizeof(T) / sizeof(float);
-  set_vertexattrib(index, shape.vertex_attributes.back(), elem_size);
+  set_vertexattrib(index, attribute, elem_size);
   return index;
 }
 
 template <typename T>
-void init_elements(Shape& shape, const vector<T>& data) {
-  bind_shape(shape);
+void init_primitives(Shape& shape, const vector<T>& data) {
   check_error();
-  init_arraybuffer(shape.elements, data);
+  bind_shape(shape);
+  init_arraybuffer(shape.primitives, data);
   int elem_size = sizeof(T) / sizeof(int);
   if (elem_size == 1) shape.type = Shape::type::points;
   if (elem_size == 2) shape.type = Shape::type::lines;
@@ -304,8 +304,7 @@ struct Camera {
 Camera make_lookat_camera(
     const vec3f& from, const vec3f& to, const vec3f& up = {0, 1, 0});
 mat4f make_view_matrix(const Camera& camera);
-mat4f make_projection_matrix(const Camera& camera, const vec2i& viewport,
-    float near = 0.01, float far = 10000);
+mat4f make_projection_matrix(const Camera& camera, const vec2i& viewport);
 
 /*
 struct Image {
