@@ -40,11 +40,11 @@ add_library(realtime
     realtime/ext/imgui/imgui_impl_glfw.cpp realtime/ext/imgui/imgui_impl_opengl3.cpp realtime/ext/glad/glad.c)
 
 target_link_libraries(realtime graphics)
-
-
 target_include_directories(realtime PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
-target_compile_definitions(realtime PUBLIC OPENGL_VERSION=1)
+# if apps
+add_executable(mesh_viewer ./examples/mesh_viewer.cpp)
+target_link_libraries(mesh_viewer realtime ${OPENGL_gl_LIBRARY} ${GLFW_LIBRARY} ${GL_EXTRA_LIBRARIES})
 
 # 
 #       How to link this library!!!

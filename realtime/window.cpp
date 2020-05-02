@@ -1,15 +1,7 @@
 #include "window.h"
 
-#include <graphics/commonio.h>
-
-#ifdef __APPLE__
-#define GL_SILENCE_DEPRECATION
-#endif
-#include "ext/glad/glad.h"
-
-// break
-
 #include <GLFW/glfw3.h>
+#include <graphics/commonio.h>
 
 // break
 
@@ -47,48 +39,21 @@ void update_camera(frame3f& frame, float& focus, const Window& win) {
   }
 }
 
-// void _fw_drop_callback(GLFWwindow* glfw, int num, const char** paths) {
-//  auto& win = *(const Window*)glfwGetWindowUserPointer(glfw);
-//  if (win.drop_cb) {
-//    auto pathv = vector<string>();
-//    for (auto i = 0; i < num; i++) pathv.push_back(paths[i]);
-//    win.drop_cb(win, pathv);
-//  }
-//}
-//
-// void _fw_key_callback(
-//    GLFWwindow* glfw, int key, int scancode, int action, int mods) {
-//  auto& win = *(const Window*)glfwGetWindowUserPointer(glfw);
-//  if (win.key_cb) win.key_cb(win, (Key)key, (bool)action);
-//}
-//
-// void _fw_click_callback(GLFWwindow* glfw, int button, int action, int mods)
-// {
-//  auto& win = *(const Window*)glfwGetWindowUserPointer(glfw);
-//  if (win.click_cb)
-//    win.click_cb(win, button == GLFW_MOUSE_BUTTON_LEFT, (bool)action);
-//}
-//
-// void _fw_scroll_callback(GLFWwindow* glfw, double xoffset, double yoffset)
-// {
-//  auto& win = *(const Window*)glfwGetWindowUserPointer(glfw);
-//  if (win.scroll_cb) win.scroll_cb(win, (float)yoffset);
-//}
-
-void update_joysticks(Window& win) {
-  win.joysticks.clear();
-  const int max_joysticks = 16;
+void init_joysticks(vector<Joystick>& joysticks) {
+  joysticks.clear();
+  const int max_joysticks = 8;
   for (int i = 0; i < max_joysticks; i++) {
     auto present    = glfwJoystickPresent(i);
     auto is_gamepad = glfwJoystickIsGamepad(i);
 
     if (present and is_gamepad) {
-      auto joystick = Joystick{};
-      joystick.id   = i;
-      win.joysticks.push_back(joystick);
+      auto& joystick = joysticks.emplace_back();
+      joystick.id    = i;
     }
   }
 }
+void init_joysticks(Window& win) { init_joysticks(win.joysticks); }
+
 // clang-format off
 bool Joystick::cross() const { return buttons[GLFW_GAMEPAD_BUTTON_CIRCLE]; }
 bool Joystick::circle() const { return buttons[GLFW_GAMEPAD_BUTTON_SQUARE]; }
@@ -108,7 +73,8 @@ bool Joystick::Y() const { return buttons[GLFW_GAMEPAD_BUTTON_Y]; }
 void init_window(Window& win, const vec2i& size, const string& title) {
   // init glfw
   if (!glfwInit())
-    throw std::runtime_error("cannot initialize windowing system");
+    throw std::runtime_error(
+        "Cannot initialize GLFW context. Make sure the OpenGL context is intialized.");
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -118,7 +84,7 @@ void init_window(Window& win, const vec2i& size, const string& title) {
 
   // create window
   win.glfw = glfwCreateWindow(size.x, size.y, title.c_str(), nullptr, nullptr);
-  if (!win.glfw) throw std::runtime_error("cannot initialize windowing system");
+  if (!win.glfw) throw std::runtime_error("Cannot initialize GLFW window.");
   glfwMakeContextCurrent(win.glfw);
   glfwSwapInterval(1);  // Enable vsync
 
@@ -169,45 +135,19 @@ void init_window(Window& win, const vec2i& size, const string& title) {
 
   // TODO
   // glfwSetJoystickCallback([](int id, int event) { update_joysticks(win); });
-  update_joysticks(win);
+
+  init_joysticks(win);
 
   glfwSetWindowSizeCallback(
       win.glfw, [](GLFWwindow* glfw, int width, int height) {
         auto win = (Window*)glfwGetWindowUserPointer(glfw);
         glfwGetWindowSize(win->glfw, &win->size.x, &win->size.y);
-        if (win->widgets_width) win->size.x -= win->widgets_width;
         glfwGetFramebufferSize(win->glfw, &win->framebuffer_viewport.z,
             &win->framebuffer_viewport.w);
         win->framebuffer_viewport.x = 0;
         win->framebuffer_viewport.y = 0;
-        if (win->widgets_width) {
-          auto win_size = zero2i;
-          glfwGetWindowSize(win->glfw, &win_size.x, &win_size.y);
-          auto offset = (int)(win->widgets_width *
-                              (float)win->framebuffer_viewport.z / win_size.x);
-          win->framebuffer_viewport.z -= offset;
-          if (win->widgets_left) win->framebuffer_viewport.x += offset;
-        }
       });
 
-  // init gl extensions
-  if (!gladLoadGL())
-    throw std::runtime_error("cannot initialize OpenGL extensions");
-
-  // widgets
-  bool widgets = 1;
-  if (widgets) {
-    ImGui::CreateContext();
-    ImGui::GetIO().IniFilename       = nullptr;
-    ImGui::GetStyle().WindowRounding = 0;
-    ImGui_ImplGlfw_InitForOpenGL(win.glfw, true);
-#ifndef __APPLE__
-    ImGui_ImplOpenGL3_Init();
-#else
-    ImGui_ImplOpenGL3_Init("#version 330");
-#endif
-    ImGui::StyleColorsDark();
-  }
   update_window_size(win);
 }
 
@@ -256,20 +196,11 @@ bool is_key_pressed(const Window& win, Key key) {
 void update_window_size(Window& win) {
   auto& glfw = win.glfw;
   glfwGetWindowSize(glfw, &win.size.x, &win.size.y);
-  if (win.widgets_width) win.size.x -= win.widgets_width;
   glfwGetFramebufferSize(
       glfw, &win.framebuffer_viewport.z, &win.framebuffer_viewport.w);
   win.framebuffer_viewport.x = 0;
   win.framebuffer_viewport.y = 0;
-  if (win.widgets_width) {
-    auto win_size = zero2i;
-    glfwGetWindowSize(glfw, &win_size.x, &win_size.y);
-    auto offset = (int)(win.widgets_width * (float)win.framebuffer_viewport.z /
-                        win_size.x);
-    win.framebuffer_viewport.z -= offset;
-    if (win.widgets_left) win.framebuffer_viewport.x += offset;
-  }
-  win.framebuffer_size = {
+  win.framebuffer_size       = {
       win.framebuffer_viewport.z - win.framebuffer_viewport.x,
       win.framebuffer_viewport.w - win.framebuffer_viewport.y};
 }
@@ -280,9 +211,7 @@ void update_input(Input& input, const Window& win) {
   auto  mouse_posx = 0.0, mouse_posy = 0.0;
   auto& glfw = win.glfw;
   glfwGetCursorPos(glfw, &mouse_posx, &mouse_posy);
-  input.mouse_pos = vec2f{(float)mouse_posx, (float)mouse_posy};
-  if (win.widgets_width && win.widgets_left)
-    input.mouse_pos.x -= win.widgets_width;
+  input.mouse_pos  = vec2f{(float)mouse_posx, (float)mouse_posy};
   input.mouse_left = glfwGetMouseButton(glfw, GLFW_MOUSE_BUTTON_LEFT) ==
                      GLFW_PRESS;
   input.mouse_right = glfwGetMouseButton(glfw, GLFW_MOUSE_BUTTON_RIGHT) ==
@@ -294,11 +223,11 @@ void update_input(Input& input, const Window& win) {
   input.modifier_ctrl = glfwGetKey(glfw, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS ||
                         glfwGetKey(glfw, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS;
 
-  // if (win.widgets_width) {
-  auto io             = &ImGui::GetIO();
-  input.is_gui_active = io->WantTextInput || io->WantCaptureMouse ||
-                        io->WantCaptureKeyboard;
-  // }
+  if (win.gui_width) {
+    auto io             = &ImGui::GetIO();
+    input.is_gui_active = io->WantTextInput || io->WantCaptureMouse ||
+                          io->WantCaptureKeyboard;
+  }
 
   input.is_window_focused = glfwGetWindowAttrib(win.glfw, GLFW_FOCUSED) != 0;
 
@@ -341,8 +270,13 @@ void swap_buffers(const Window& win) { glfwSwapBuffers(win.glfw); }
 // OPENGL WIDGETS
 // -----------------------------------------------------------------------------
 
-void init_glwidgets(Window& win, int width, bool left) {
-  // init widgets
+struct Panel {
+  vec2f       position;
+  vec2f       size;
+  const char* name;
+};
+
+void init_gui(Window& win, int width, bool left) {
   ImGui::CreateContext();
   ImGui::GetIO().IniFilename       = nullptr;
   ImGui::GetStyle().WindowRounding = 0;
@@ -353,24 +287,26 @@ void init_glwidgets(Window& win, int width, bool left) {
   ImGui_ImplOpenGL3_Init("#version 330");
 #endif
   ImGui::StyleColorsDark();
-  win.widgets_width = width;
-  win.widgets_left  = left;
+  win.gui_width = width;
+  win.gui_left  = left;
 }
 
-void gui_begin(const Window& win) {
+void gui_begin(const Window& win, const char* name) {
+  if (win.gui_width <= 0) return;
   ImGui_ImplOpenGL3_NewFrame();
   ImGui_ImplGlfw_NewFrame();
   ImGui::NewFrame();
-  auto win_size = win.size;  // get_glwindow_size(win, false);
-  if (win.widgets_left) {
+  if (win.gui_left) {
     ImGui::SetNextWindowPos({0, 0});
-    ImGui::SetNextWindowSize({(float)win.widgets_width, (float)win_size.y});
+    ImGui::SetNextWindowSize({float(win.gui_width), float(win.size.y)});
   } else {
-    ImGui::SetNextWindowPos({(float)(win_size.x - win.widgets_width), 0});
-    ImGui::SetNextWindowSize({(float)win.widgets_width, (float)win_size.y});
+    ImGui::SetNextWindowPos({float(win.size.x - win.gui_width), 0});
+    ImGui::SetNextWindowSize({float(win.gui_width), float(win.size.y)});
   }
-  ImGui::SetNextWindowCollapsed(false);
+
   ImGui::SetNextWindowBgAlpha(1);
+  ImGui::Begin(
+      name, nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize);
 }
 
 void gui_end(const Window& win) {

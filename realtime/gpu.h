@@ -255,16 +255,16 @@ void init_elements(Shape& shape, const vector<T>& data) {
   check_error();
 }
 
-Shape make_points(const vector<vec3f>& positions);
-Shape make_polyline(const vector<vec3f>& position,
-    const vector<vec3f>& normals = {}, float eps = 0.01);
-Shape make_quad();
-Shape make_regular_polygon(int num_sides);
-Shape make_mesh(const vector<vec3i>& triangles, const vector<vec3f>& positions,
-    const vector<vec3f>& normals);
-Shape make_vector_field(const vector<vec3f>& vector_field,
+Shape make_points_shape(const vector<vec3f>& positions);
+Shape make_polyline_shape(
+    const vector<vec3f>& position, const vector<vec3f>& normals = {});
+Shape make_quad_shape();
+Shape make_regular_polygon_shape(int num_sides);
+Shape make_mesh_shape(const vector<vec3i>& triangles,
+    const vector<vec3f>& positions, const vector<vec3f>& normals);
+Shape make_vector_field_shape(const vector<vec3f>& vector_field,
     const vector<vec3f>& from, float scale = 0.01);
-Shape make_vector_field(const vector<vec3f>& vector_field,
+Shape make_vector_field_shape(const vector<vec3f>& vector_field,
     const vector<vec3i>& triangles, const vector<vec3f>& positions,
     float scale = 0.001);
 

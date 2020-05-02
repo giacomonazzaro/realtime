@@ -21,7 +21,7 @@ using namespace yocto;
 bool init_opengl() {
   // init gl extensions
   if (!gladLoadGL())
-    throw std::runtime_error("cannot initialize OpenGL extensions");
+    throw std::runtime_error("Cannot initialize OpenGL context.");
   return true;
 }
 
@@ -617,7 +617,7 @@ void bind_shape(const Shape& shape) {
   check_error();
 }
 
-Shape make_points(const vector<vec3f>& positions) {
+Shape make_points_shape(const vector<vec3f>& positions) {
   auto shape = Shape{};
   init_shape(shape);
   add_vertex_attribute(shape, positions);
@@ -625,8 +625,8 @@ Shape make_points(const vector<vec3f>& positions) {
   return shape;
 }
 
-Shape make_polyline(
-    const vector<vec3f>& positions, const vector<vec3f>& normals, float eps) {
+Shape make_polyline_shape(
+    const vector<vec3f>& positions, const vector<vec3f>& normals) {
   auto shape = Shape{};
   init_shape(shape);
   add_vertex_attribute(shape, positions);
@@ -637,7 +637,7 @@ Shape make_polyline(
   return shape;
 }
 
-Shape make_quad() {
+Shape make_quad_shape() {
   auto shape = Shape{};
   init_shape(shape);
   add_vertex_attribute(
@@ -646,7 +646,7 @@ Shape make_quad() {
   return shape;
 }
 
-Shape make_regular_polygon(int num_sides) {
+Shape make_regular_polygon_shape(int num_sides) {
   auto shape = Shape{};
   init_shape(shape);
   auto positions   = vector<vec2f>(num_sides + 1);
@@ -672,8 +672,8 @@ Shape make_regular_polygon(int num_sides) {
   return shape;
 }
 
-Shape make_mesh(const vector<vec3i>& triangles, const vector<vec3f>& positions,
-    const vector<vec3f>& normals) {
+Shape make_mesh_shape(const vector<vec3i>& triangles,
+    const vector<vec3f>& positions, const vector<vec3f>& normals) {
   auto shape = Shape{};
   init_shape(shape);
   add_vertex_attribute(shape, positions);
@@ -682,7 +682,7 @@ Shape make_mesh(const vector<vec3i>& triangles, const vector<vec3f>& positions,
   return shape;
 }
 
-Shape make_vector_field(
+Shape make_vector_field_shape(
     const vector<vec3f>& vector_field, const vector<vec3f>& from, float scale) {
   assert(vector_field.size() == from.size());
   auto shape = Shape{};
@@ -705,7 +705,7 @@ Shape make_vector_field(
   return shape;
 }
 
-Shape make_vector_field(const vector<vec3f>& vector_field,
+Shape make_vector_field_shape(const vector<vec3f>& vector_field,
     const vector<vec3i>& triangles, const vector<vec3f>& positions,
     float scale) {
   assert(vector_field.size() == triangles.size());

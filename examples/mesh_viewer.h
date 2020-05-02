@@ -17,7 +17,9 @@ inline Camera make_framing_camera(const vector<vec3f>& positions);
 inline void run_viewer(const ioshape& mesh) {
   // Init window.
   auto win = Window();
-  init_window(win, {300, 300}, "mesh viewer");
+  init_window(win, {500, 500}, "mesh viewer");
+  init_opengl();
+  init_gui(win, 100);
 
   // Init camera.
   auto camera = make_framing_camera(mesh.positions);
@@ -26,7 +28,7 @@ inline void run_viewer(const ioshape& mesh) {
   auto normals = mesh.normals.empty()
                      ? compute_normals(mesh.triangles, mesh.positions)
                      : mesh.normals;
-  auto shape = make_mesh(mesh.triangles, mesh.positions, normals);
+  auto shape = make_mesh_shape(mesh.triangles, mesh.positions, normals);
 
   // Init shader.
   auto shader = make_shader_from_file("shaders/mesh.vert", "shaders/mesh.frag");
@@ -46,6 +48,12 @@ inline void run_viewer(const ioshape& mesh) {
       Uniform("projection", projection)
     );
     // clang-format on
+
+    gui_begin(win, "gui");
+    if (gui_button(win, "Hello")) {
+      printf("Hello, World!\n");
+    }
+    gui_end(win);
   };
 
   run_draw_loop(win, draw);

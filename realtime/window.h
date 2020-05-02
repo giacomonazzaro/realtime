@@ -116,7 +116,7 @@ struct Joystick {
   bool  buttons[15];
   int   id = -1;
 
-  // Handy interface. The mapping of buttons may be broken on some platform.
+  // Handy interface for buttons. The mapping may be broken on some platform.
   // Using the recommanded mapping from GLFW gave wrong results with a PS4
   // Dualshock on a Mac. Change the implementation of these methods if needed.
   bool cross() const;
@@ -166,8 +166,8 @@ struct Window {
   vec2i size                 = {0, 0};
   vec4i framebuffer_viewport = {0, 0, 0, 0};
   vec2i framebuffer_size     = {0, 0};
-  int   widgets_width        = 0;
-  bool  widgets_left         = true;
+  int   gui_width            = 0;
+  bool  gui_left             = true;
 
   // Shortcuts to run callbacks.
   void refresh() { callbacks.refresh(*this); }
@@ -187,7 +187,9 @@ bool  is_key_pressed(const Window& win, Key key);
 void update_window_size(Window& win);
 void update_input(Input& input, const Window& win);
 void update_input(Window& win);
-void update_joystick_input(vector<Joystick>& joysticks, Window& win);
+void init_joysticks(vector<Joystick>& joysticks);
+void init_joysticks(Window& win);
+void update_joystick_input(vector<Joystick>& joysticks, const Window& win);
 void update_joystick_input(Window& win);
 
 void poll_events(const Window& win, bool wait);
@@ -197,13 +199,13 @@ void run_draw_loop(
 
 void update_camera(frame3f& frame, float& focus, const Window& win);
 
-// Tools for building a user interface.
-bool begin_header(Window& win, const char* title);
-void end_header(Window& win);
-
-void gui_begin(const Window& win);
+// Tools for building a user interface. Maybe put this in another file?
+void init_gui(Window& win, int width, bool left = true);
+void gui_begin(const Window& win, const char* name);
 void gui_end(const Window& win);
 
+bool begin_header(Window& win, const char* title);
+void end_header(Window& win);
 void gui_label(Window& win, const char* lbl, const std::string& text);
 
 void gui_separator(Window& win);
