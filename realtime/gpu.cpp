@@ -191,14 +191,14 @@ void init_texture(Texture& texture, const vec2i& size, bool as_float,
   check_error();
 }
 
-inline void init_texture(Texture& texture, const image<vec4f>& img,
-    bool as_float, bool linear, bool mipmap) {
+void init_texture(Texture& texture, const image<vec4f>& img, bool as_float,
+    bool linear, bool mipmap) {
   init_texture(texture, img.size(), as_float, false, linear, mipmap);
   update_texture(texture, img, mipmap);
 }
 
-inline void init_texture(Texture& texture, const image<vec4b>& img,
-    bool as_srgb, bool linear, bool mipmap) {
+void init_texture(Texture& texture, const image<vec4b>& img, bool as_srgb,
+    bool linear, bool mipmap) {
   init_texture(texture, img.size(), false, as_srgb, linear, mipmap);
   update_texture(texture, img, mipmap);
 }

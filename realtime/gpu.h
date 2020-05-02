@@ -43,10 +43,10 @@ struct Texture {
 void init_texture(Texture& texture, const vec2i& size, bool as_float,
     bool as_srgb, bool linear, bool mipmap);
 
-inline void init_texture(Texture& texture, const image<vec4f>& img,
-    bool as_float, bool linear, bool mipmap);
-inline void init_texture(Texture& texture, const image<vec4b>& img,
-    bool as_srgb, bool linear, bool mipmap);
+void init_texture(Texture& texture, const image<vec4f>& img, bool as_float,
+    bool linear, bool mipmap);
+void init_texture(Texture& texture, const image<vec4b>& img, bool as_srgb,
+    bool linear, bool mipmap);
 
 void update_texture(Texture& texture, const image<vec4f>& img, bool mipmap);
 void update_texture(Texture& texture, const image<vec4b>& img, bool mipmap);
@@ -154,7 +154,7 @@ void set_uniform_texture(int location, const Texture& texture, int unit);
 void set_uniform_texture(
     const Shader& shader, const char* name, const Texture& texture, int unit);
 void set_uniform_texture(
-    int location, int locatiom_on, const Texture& texture, int unit);
+    int location, int location_on, const Texture& texture, int unit);
 void set_uniform_texture(const Shader& shader, const char* name,
     const char* name_on, const Texture& texture, int unit);
 

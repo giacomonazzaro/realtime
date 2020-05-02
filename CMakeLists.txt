@@ -46,6 +46,9 @@ target_include_directories(realtime PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 add_executable(mesh_viewer ./examples/mesh_viewer.cpp)
 target_link_libraries(mesh_viewer realtime ${OPENGL_gl_LIBRARY} ${GLFW_LIBRARY} ${GL_EXTRA_LIBRARIES})
 
+add_executable(image_viewer ./examples/image_viewer.cpp)
+target_link_libraries(image_viewer realtime ${OPENGL_gl_LIBRARY} ${GLFW_LIBRARY} ${GL_EXTRA_LIBRARIES})
+
 # 
 #       How to link this library!!!
 # 
