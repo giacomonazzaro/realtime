@@ -107,6 +107,7 @@ struct Input {
   uint64_t clock_last        = 0;      // clock last
   double   time_now          = 0;      // time now
   double   time_delta        = 0;      // time delta
+  int      frame             = 0;
 };
 
 // Data structure where the input of a joystick is stored.

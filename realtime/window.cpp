@@ -237,6 +237,7 @@ void update_input(Input& input, const Window& win) {
       std::chrono::high_resolution_clock::now().time_since_epoch().count();
   input.time_now   = (double)input.clock_now / 1e9;
   input.time_delta = (double)(input.clock_now - input.clock_last) / 1e9;
+  input.frame += 1;
 }
 
 void update_input(Window& win) { update_input(win.input, win); }

@@ -49,6 +49,9 @@ target_link_libraries(mesh_viewer realtime ${OPENGL_gl_LIBRARY} ${GLFW_LIBRARY} 
 add_executable(image_viewer ./examples/image_viewer.cpp)
 target_link_libraries(image_viewer realtime ${OPENGL_gl_LIBRARY} ${GLFW_LIBRARY} ${GL_EXTRA_LIBRARIES})
 
+add_executable(shadertoy ./examples/shadertoy.cpp)
+target_link_libraries(shadertoy realtime ${OPENGL_gl_LIBRARY} ${GLFW_LIBRARY} ${GL_EXTRA_LIBRARIES})
+
 # 
 #       How to link this library!!!
 # 
