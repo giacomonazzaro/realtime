@@ -17,7 +17,7 @@ inline void run_shadertoy(const string& filename) {
   init_window(win, {1000, 500}, "Shadertoy");
   init_opengl();
 
-  auto shape  = make_quad_shape();
+  auto quad   = make_quad_shape();
   auto shader = make_shader_from_file("shaders/quad.vert", filename);
 
   // Recompile shader with ENTER
@@ -32,8 +32,9 @@ inline void run_shadertoy(const string& filename) {
 
   auto draw = [&](Window& win) {
     clear_framebuffer({0, 0, 0, 1});
+
     // clang-format off
-    draw_shape(shape, shader,
+    draw_shape(quad, shader,
       Uniform("iTime", float(win.input.time_now)),
       Uniform("iFrame", win.input.frame),
       Uniform("iResolution", win.size),
