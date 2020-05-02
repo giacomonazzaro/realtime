@@ -3,11 +3,12 @@
 #include <vector>
 using namespace std;
 
-#include "../yocto_modelio.h"
-#include "../yocto_opengl.h"
-#include "../yocto_window.h"
+#include <graphics/modelio.h>
+#include <realtime/gpu.h>
+#include <realtime/window.h>
 using namespace yocto;
-using namespace opengl;
+using namespace gpu;
+using namespace window;
 
 vector<vec3f> compute_normals(
     const vector<vec3i>& triangles, const vector<vec3f>& positions) {
@@ -39,7 +40,8 @@ int main(int num_args, const char* args[]) {
   // Init window.
   auto win = Window();
 
-  init_window(win, {300, 300}, "mesh viewer");
+  init_window(win, {800, 600}, "mesh viewer");
+  init_opengl();
 
   auto mesh = load_shape(args[1]);
 
@@ -50,16 +52,16 @@ int main(int num_args, const char* args[]) {
   auto normals = mesh.normals.empty()
                      ? compute_normals(mesh.triangles, mesh.positions)
                      : mesh.normals;
-  auto shape = make_mesh(mesh.triangles, mesh.positions, normals);
-  auto quad  = make_quad();
+  auto shape = make_mesh_shape(mesh.triangles, mesh.positions, normals);
+  auto quad  = make_quad_shape();
 
   // Init shader.
-  auto color_shader = create_shader(
-      "shaders/mesh.vert", "shaders/mesh_color.frag", true);
-  auto normal_shader = create_shader(
-      "shaders/mesh.vert", "shaders/mesh_normals.frag", true);
-  auto quad_shader = create_shader(
-      "shaders/quad.vert", "shaders/quad_shade.frag", true);
+  auto color_shader = make_shader_from_file(
+      "shaders/mesh.vert", "shaders/mesh_color.frag");
+  auto normal_shader = make_shader_from_file(
+      "shaders/mesh.vert", "shaders/mesh_normals.frag");
+  auto quad_shader = make_shader_from_file(
+      "shaders/quad.vert", "shaders/shade.frag");
 
   auto framebuffer  = win.framebuffer_size;
   auto color_buffer = make_render_target(framebuffer, false, false, true, true);

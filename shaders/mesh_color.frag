@@ -9,8 +9,6 @@ uniform mat4 projection;
 uniform vec3 color;
 
 void main() {
-    // vec3 light = normalize(vec3(1,1,1));
-    // vec3 diffuse = color * max(dot(normal, light), 0);
     vec3 diffuse = color;
     result = vec4(diffuse, 1);
 }

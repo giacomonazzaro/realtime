@@ -14,7 +14,7 @@ inline vector<vec3f> compute_normals(
     const vector<vec3i>& triangles, const vector<vec3f>& positions);
 inline Camera make_framing_camera(const vector<vec3f>& positions);
 
-inline void run_viewer(const ioshape& mesh) {
+inline void run_mesh_viewer(const ioshape& mesh) {
   // Init window.
   auto win = Window();
   init_window(win, {500, 500}, "mesh viewer");
@@ -63,8 +63,8 @@ inline void run_viewer(const ioshape& mesh) {
   delete_window(win);
 }
 
-inline void run_viewer(const string& filename) {
-  run_viewer(load_shape(filename));
+inline void run_mesh_viewer(const string& filename) {
+  run_mesh_viewer(load_shape(filename));
 }
 
 inline vector<vec3f> compute_normals(

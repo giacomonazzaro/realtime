@@ -63,4 +63,7 @@ if(REALTIME_EXAMPLES)
 
     add_executable(shadertoy ./examples/shadertoy.cpp ./examples/shadertoy.h)
     target_link_libraries(shadertoy realtime ${OPENGL_gl_LIBRARY} ${GLFW_LIBRARY} ${GL_EXTRA_LIBRARIES})
+
+    add_executable(deferred ./examples/deferred_shading.cpp)
+    target_link_libraries(deferred realtime ${OPENGL_gl_LIBRARY} ${GLFW_LIBRARY} ${GL_EXTRA_LIBRARIES})
 endif(REALTIME_EXAMPLES)

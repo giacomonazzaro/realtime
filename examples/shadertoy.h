@@ -45,7 +45,7 @@ inline void run_shadertoy(const string& filename) {
 
   run_draw_loop(win, draw, false);
 
-  delete_shape(shape);
+  delete_shape(quad);
   delete_shader(shader);
   delete_window(win);
 }
