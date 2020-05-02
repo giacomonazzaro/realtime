@@ -140,9 +140,6 @@ struct Window;
 
 // Callbacks of a window, grouped in a struct for convenience.
 struct Callbacks {
-  // Called when the contents of a window is damaged and needs to be refreshed
-  function<void(Window&)> refresh;
-
   // Called when drag and dropping files onto window.
   function<void(Window&, const vector<string>&)> drop;
 
@@ -171,7 +168,6 @@ struct Window {
   bool  gui_left             = true;
 
   // Shortcuts to run callbacks.
-  void refresh() { callbacks.refresh(*this); }
   void drop(const vector<string>& names) { callbacks.drop(*this, names); }
   void key(Key key, bool pressed) { callbacks.key(*this, key, pressed); }
   void click(bool left, bool pressed) { callbacks.click(*this, left, pressed); }

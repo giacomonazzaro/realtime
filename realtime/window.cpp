@@ -113,13 +113,6 @@ void init_window(Window& win, const vec2i& size, const string& title) {
 
 void init_callbacks(Window& win) {
   // set callbacks
-  if (win.callbacks.refresh) {
-    glfwSetWindowRefreshCallback(win.glfw, [](GLFWwindow* glfw) {
-      auto win = (Window*)glfwGetWindowUserPointer(glfw);
-      win->refresh();
-    });
-  }
-
   if (win.callbacks.drop) {
     glfwSetDropCallback(
         win.glfw, [](GLFWwindow* glfw, int num, const char** paths) {
