@@ -113,16 +113,6 @@ void init_window(Window& win, const vec2i& size, const string& title) {
 
 void init_callbacks(Window& win) {
   // set callbacks
-  if (win.callbacks.drop) {
-    glfwSetDropCallback(
-        win.glfw, [](GLFWwindow* glfw, int num, const char** paths) {
-          auto win   = (Window*)glfwGetWindowUserPointer(glfw);
-          auto pathv = vector<string>();
-          for (auto i = 0; i < num; i++) pathv.push_back(paths[i]);
-          win->drop(pathv);
-        });
-  }
-
   if (win.callbacks.key) {
     glfwSetKeyCallback(win.glfw,
         [](GLFWwindow* glfw, int key, int scancode, int action, int mods) {
@@ -145,6 +135,23 @@ void init_callbacks(Window& win) {
           auto win = (Window*)glfwGetWindowUserPointer(glfw);
           win->scroll((float)yoffset);
         });
+  }
+
+  if (win.callbacks.drop) {
+    glfwSetDropCallback(
+        win.glfw, [](GLFWwindow* glfw, int num, const char** paths) {
+          auto win   = (Window*)glfwGetWindowUserPointer(glfw);
+          auto pathv = vector<string>();
+          for (auto i = 0; i < num; i++) pathv.push_back(paths[i]);
+          win->drop(pathv);
+        });
+  }
+
+  if (win.callbacks.focus) {
+    glfwSetWindowFocusCallback(win.glfw, [](GLFWwindow* glfw, int focus) {
+      auto win = (Window*)glfwGetWindowUserPointer(glfw);
+      win->focus(focus);
+    });
   }
 }
 

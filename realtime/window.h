@@ -140,9 +140,6 @@ struct Window;
 
 // Callbacks of a window, grouped in a struct for convenience.
 struct Callbacks {
-  // Called when drag and dropping files onto window.
-  function<void(Window&, const vector<string>&)> drop;
-
   // Called when a key is pressed or release.
   function<void(Window&, Key key, bool pressed)> key;
 
@@ -151,6 +148,12 @@ struct Callbacks {
 
   // Called when scroll is preformed.
   function<void(Window&, float amount)> scroll;
+
+  // Called when drag and dropping files onto window.
+  function<void(Window&, const vector<string>&)> drop;
+
+  // Called when window gains or lose focus.
+  function<void(Window&, int focused)> focus;
 };
 
 // Info to open and handle a new window within the OS.
@@ -172,6 +175,7 @@ struct Window {
   void key(Key key, bool pressed) { callbacks.key(*this, key, pressed); }
   void click(bool left, bool pressed) { callbacks.click(*this, left, pressed); }
   void scroll(float amount) { callbacks.scroll(*this, amount); }
+  void focus(int focused) { callbacks.focus(*this, focused); }
 };
 
 void init_window(Window& win, const vec2i& size, const string& title);

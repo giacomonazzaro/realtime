@@ -20,9 +20,9 @@ inline void run_shadertoy(const string& filename) {
   auto quad   = make_quad_shape();
   auto shader = make_shader_from_file("shaders/quad.vert", filename);
 
-  // Recompile shader with ENTER
-  win.callbacks.key = [&shader](Window&, Key key, bool pressed) {
-    if (key == Key::enter && pressed) {
+  // Auto-recompile shader with window gains focus.
+  win.callbacks.focus = [&shader](Window&, int focused) {
+    if (focused) {
       printf("Reloading shader.\n");
       load_shader_code(shader);
       init_shader(shader);
