@@ -14,9 +14,12 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 add_library(graphics
     graphics/math.h
-    graphics/common.h graphics/commonio.h 
-    graphics/modelio.h graphics/modelio.cpp
-    graphics/image.h graphics/image.cpp
+    graphics/common.h    graphics/commonio.h 
+    graphics/modelio.h   graphics/modelio.cpp
+    graphics/image.h     graphics/image.cpp
+    graphics/bvh.h       graphics/bvh.cpp
+    # graphics/rendering.h graphics/rendering.cpp
+    # graphics/geometry.h  graphics/geometry.cpp
 )
 
 target_include_directories(graphics PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
