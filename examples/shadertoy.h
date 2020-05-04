@@ -20,12 +20,12 @@ inline void run_shadertoy(const string& filename) {
   auto quad   = make_quad_shape();
   auto shader = make_shader_from_file("shaders/quad.vert", filename);
 
-  // Auto-recompile shader with window gains focus.
+  // Auto-recompile shader when window gains focus.
   win.callbacks.focus = [&shader](Window&, int focused) {
     if (focused) {
       printf("Reloading shader.\n");
       load_shader_code(shader);
-      init_shader(shader);
+      init_shader(shader, false);
     }
   };
   init_callbacks(win);
