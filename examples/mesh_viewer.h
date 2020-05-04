@@ -17,25 +17,26 @@ inline Camera make_framing_camera(const vector<vec3f>& positions);
 inline void run_mesh_viewer(const ioshape& mesh) {
   // Init window.
   auto win = Window();
-  init_window(win, {500, 500}, "mesh viewer");
+  init_window(win, {800, 600}, "mesh viewer");
   init_opengl();
   init_gui(win, 100);
 
   // Init camera.
   auto camera = make_framing_camera(mesh.positions);
 
-  // Init shape.
-  auto normals = mesh.normals.empty()
-                     ? compute_normals(mesh.triangles, mesh.positions)
-                     : mesh.normals;
+  // Init normals
+  auto normals = mesh.normals;
+  if (normals.empty())
+    normals = compute_normals(mesh.triangles, mesh.positions);
+
+  // Init gpu shape.
   auto shape = make_mesh_shape(mesh.triangles, mesh.positions, normals);
 
-  // Init shader.
+  // Init gpu shader.
   auto shader = make_shader_from_file("shaders/mesh.vert", "shaders/mesh.frag");
 
   auto draw = [&](Window& win) {
     update_camera(camera.frame, camera.focus, win);
-
     auto view       = make_view_matrix(camera);
     auto projection = make_projection_matrix(camera, win.size);
 
@@ -56,8 +57,10 @@ inline void run_mesh_viewer(const ioshape& mesh) {
     gui_end(win);
   };
 
+  // Run draw loop.
   run_draw_loop(win, draw);
 
+  // Cleanup.
   delete_shape(shape);
   delete_shader(shader);
   delete_window(win);
@@ -85,9 +88,8 @@ inline vector<vec3f> compute_normals(
 inline Camera make_framing_camera(const vector<vec3f>& positions) {
   auto direction = vec3f{0, 1, 2};
   auto box       = bbox3f{};
-  for (auto& p : positions) {
-    expand(box, p);
-  }
+  for (auto& p : positions) expand(box, p);
+
   auto box_center = center(box);
   auto box_size   = max(size(box));
   return make_lookat_camera(direction * box_size + box_center, box_center);

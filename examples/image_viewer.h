@@ -11,10 +11,9 @@ using namespace window;
 using namespace gpu;
 
 inline void run_image_viewer(const image<vec4f>& image) {
-  // Init window.
   auto win = Window();
 
-  // Preserve aspect ratio
+  // Init window, preserving image aspect ratio
   vec2i size = image.size();
   size.y *= 1000 / float(size.x);
   size.x = 1000;
@@ -22,6 +21,7 @@ inline void run_image_viewer(const image<vec4f>& image) {
   init_window(win, size, "image viewer");
   init_opengl();
 
+  // Init gpu data.
   auto shape  = make_quad_shape();
   auto shader = make_shader_from_file(
       "shaders/quad.vert", "shaders/texture.frag");
