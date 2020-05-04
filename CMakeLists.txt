@@ -1,7 +1,7 @@
 cmake_minimum_required (VERSION 3.12)
 project (realtime)
 
-option(REALTIME_EXAMPLES "Build examples" ON)
+option(REALTIME_EXAMPLES "Build examples" OFF)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)

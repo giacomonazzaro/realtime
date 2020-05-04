@@ -87,7 +87,6 @@ Shader make_shader_from_file(const string& vertex_filename,
 
 bool init_shader(Shader& shader, bool abort_on_error) {
   check_error();
-  delete_shader(shader);
   const char* vertex   = shader.vertex_code.data();
   const char* fragment = shader.fragment_code.data();
   int         errflags;
@@ -95,55 +94,63 @@ bool init_shader(Shader& shader, bool abort_on_error) {
 
   // create vertex
   check_error();
-  shader.vertex_id = glCreateShader(GL_VERTEX_SHADER);
-  glShaderSource(shader.vertex_id, 1, &vertex, NULL);
-  glCompileShader(shader.vertex_id);
-  glGetShaderiv(shader.vertex_id, GL_COMPILE_STATUS, &errflags);
+  auto vertex_id = glCreateShader(GL_VERTEX_SHADER);
+  glShaderSource(vertex_id, 1, &vertex, NULL);
+  glCompileShader(vertex_id);
+  glGetShaderiv(vertex_id, GL_COMPILE_STATUS, &errflags);
   if (!errflags) {
-    glGetShaderInfoLog(shader.vertex_id, 10000, 0, errbuf);
+    glGetShaderInfoLog(vertex_id, 10000, 0, errbuf);
     errbuf[6] = '\n';
     printf("\n*** VERTEX SHADER COMPILATION %s\n", errbuf);
     if (abort_on_error) {
       throw std::runtime_error("shader compilation failed\n");
     }
     return false;
+    glDeleteProgram(vertex_id);
   }
   check_error();
 
   // create fragment
   check_error();
-  shader.fragment_id = glCreateShader(GL_FRAGMENT_SHADER);
-  glShaderSource(shader.fragment_id, 1, &fragment, NULL);
-  glCompileShader(shader.fragment_id);
-  glGetShaderiv(shader.fragment_id, GL_COMPILE_STATUS, &errflags);
+  auto fragment_id = glCreateShader(GL_FRAGMENT_SHADER);
+  glShaderSource(fragment_id, 1, &fragment, NULL);
+  glCompileShader(fragment_id);
+  glGetShaderiv(fragment_id, GL_COMPILE_STATUS, &errflags);
   if (!errflags) {
-    glGetShaderInfoLog(shader.fragment_id, 10000, 0, errbuf);
+    glGetShaderInfoLog(fragment_id, 10000, 0, errbuf);
     errbuf[6] = '\n';
     printf("\n*** FRAGMENT SHADER COMPILATION %s\n", errbuf);
     if (abort_on_error) {
       throw std::runtime_error("shader compilation failed\n");
     }
+    glDeleteProgram(fragment_id);
     return false;
   }
   check_error();
 
   // create shader
   check_error();
-  shader.shader_id = glCreateProgram();
-  glAttachShader(shader.shader_id, shader.vertex_id);
-  glAttachShader(shader.shader_id, shader.fragment_id);
-  glLinkProgram(shader.shader_id);
-  glValidateProgram(shader.shader_id);
-  glGetProgramiv(shader.shader_id, GL_LINK_STATUS, &errflags);
+  auto shader_id = glCreateProgram();
+  glAttachShader(shader_id, vertex_id);
+  glAttachShader(shader_id, fragment_id);
+  glLinkProgram(shader_id);
+  glValidateProgram(shader_id);
+  glGetProgramiv(shader_id, GL_LINK_STATUS, &errflags);
   if (!errflags) {
-    glGetShaderInfoLog(shader.fragment_id, 10000, 0, errbuf);
+    glGetShaderInfoLog(fragment_id, 10000, 0, errbuf);
     //    errbuf[6] = '\n';
     printf("\n*** SHADER LINKING %s\n", errbuf);
     if (abort_on_error) {
       throw std::runtime_error("shader linking failed\n");
     }
+    glDeleteProgram(shader_id);
     return false;
   }
+
+  delete_shader(shader);
+  shader.shader_id   = shader_id;
+  shader.vertex_id   = vertex_id;
+  shader.fragment_id = fragment_id;
   check_error();
   return true;
 }
