@@ -18,8 +18,8 @@ add_library(graphics
     graphics/modelio.h   graphics/modelio.cpp
     graphics/image.h     graphics/image.cpp
     graphics/bvh.h       graphics/bvh.cpp
+    graphics/geometry.h  graphics/geometry.cpp
     # graphics/rendering.h graphics/rendering.cpp
-    # graphics/geometry.h  graphics/geometry.cpp
 )
 
 target_include_directories(graphics PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
