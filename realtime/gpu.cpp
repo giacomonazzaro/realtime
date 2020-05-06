@@ -616,6 +616,7 @@ void delete_shape(Shape& shape) {
   }
   delete_arraybuffer(shape.primitives);
   glDeleteVertexArrays(1, &shape.id);
+  shape.id = 0;
 }
 
 void bind_shape(const Shape& shape) {
@@ -790,8 +791,8 @@ mat4f make_projection_matrix(const Camera& camera, const vec2i& viewport) {
   auto camera_aspect = (float)viewport.x / (float)viewport.y;
   auto camera_yfov =
       camera_aspect >= 0
-          ? (2 * yocto::atan(camera.film / (camera_aspect * 2 * camera.lens)))
-          : (2 * yocto::atan(camera.film / (2 * camera.lens)));
+          ? (2 * yocto::atan(camera.film.x / (camera_aspect * 2 * camera.lens)))
+          : (2 * yocto::atan(camera.film.x / (2 * camera.lens)));
   return perspective_mat(camera_yfov, camera_aspect, camera.near, camera.far);
 }
 

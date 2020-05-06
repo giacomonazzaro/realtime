@@ -295,7 +295,7 @@ void unbind_render_target();
 struct Camera {
   frame3f frame = identity3x4f;
   float   lens  = 0.050;
-  float   film  = 0.036;
+  vec2f   film  = {0.036, 0.024};
   float   near  = 0.001;
   float   far   = 10000;
   float   focus = flt_max;
