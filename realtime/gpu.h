@@ -56,6 +56,8 @@ void update_texture_region(Texture& texture, const image<vec4f>& img,
 void update_texture_region(Texture& texture, const image<vec4b>& img,
     const image_region& region, bool mipmap);
 
+image<vec4f> capture_screenshot();
+
 void delete_texture(Texture& texture);
 
 // An Arraybuffer is an array stored on the gpu. Here we keep track of its id,

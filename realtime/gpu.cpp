@@ -252,6 +252,25 @@ void update_texture_region(Texture& texture, const image<vec4b>& img,
   check_error();
 }
 
+image<vec4f> capture_screenshot() {
+  GLint viewport[4];
+  glGetIntegerv(GL_VIEWPORT, viewport);
+
+  int x      = viewport[0];
+  int y      = viewport[1];
+  int width  = viewport[2];
+  int height = viewport[3];
+
+  auto img = image<vec4f>({width, height});
+  // char *data = (char*) malloc((size_t) (width * height * 3)); // 3 components
+  // (R, G, B)
+
+  glPixelStorei(GL_PACK_ALIGNMENT, 1);
+  glReadPixels(x, y, width, height, GL_RGBA, GL_FLOAT, img.data());
+
+  return img;
+}
+
 void delete_texture(Texture& texture) {
   if (!texture) return;
   glDeleteTextures(1, &texture.id);
