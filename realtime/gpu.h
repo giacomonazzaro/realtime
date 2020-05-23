@@ -135,6 +135,8 @@ void set_uniform(int location, const mat3f& value);
 void set_uniform(int location, const mat4f& value);
 void set_uniform(int location, const frame3f& value);
 
+inline void set_uniform(const Shader& shader) {}
+
 template <typename T>
 inline void set_uniform(
     const Shader& shader, const char* name, const T& value) {
@@ -158,21 +160,18 @@ void set_uniform_texture(
 void set_uniform_texture(const Shader& shader, const char* name,
     const char* name_on, const Texture& texture, int unit);
 
-int get_vertexattrib_location(const Shader& shader, const char* name);
+int  get_vertex_attribute_location(const Shader& shader, const char* name);
+void set_vertex_attribute(int location, const Arraybuffer& buffer);
+void set_vertex_attribute(int location, float value);
+void set_vertex_attribute(int location, const vec2f& value);
+void set_vertex_attribute(int location, const vec3f& value);
+void set_vertex_attribute(int location, const vec4f& value);
 
-void set_vertexattrib(int location, const Arraybuffer& buffer, int elem_size);
-void set_vertexattrib(int location, const Arraybuffer& buffer, float value);
-void set_vertexattrib(
-    int location, const Arraybuffer& buffer, const vec2f& value);
-void set_vertexattrib(
-    int location, const Arraybuffer& buffer, const vec3f& value);
-void set_vertexattrib(
-    int location, const Arraybuffer& buffer, const vec4f& value);
-
-template <typename T>
-inline void set_vertexattrib(const Shader& shader, const char* name,
-    const Arraybuffer& buffer, const T& value) {
-  set_vertexattrib(get_vertexattrib_location(shader, name), buffer, value);
+template <typename Type>
+void set_vertex_attribute(
+    const Shader& shader, const char* name, const Type& buffer) {
+  auto location = get_vertex_attribute_location(shader, name);
+  set_vertex_attribute(location, buffer);
 }
 
 template <typename Type>
@@ -200,6 +199,7 @@ struct Shape {
   vector<Arraybuffer> vertex_attributes = {};
   Arraybuffer         primitives        = {};
   uint                id                = 0;
+  bool                is_strip          = true;
 
   enum struct type { points, lines, triangles };
   type type = type::triangles;
@@ -210,23 +210,45 @@ void delete_shape(Shape& shape);
 void bind_shape(const Shape& shape);
 void draw_shape(const Shape& shape);
 
-void draw_points(const Arraybuffer& buffer);
-void draw_lines(const Arraybuffer& buffer);
-void draw_triangles(const Arraybuffer& buffer);
-void draw_point_strip(const Arraybuffer& buffer);
+void draw_point_array(const Arraybuffer& buffer);
+void draw_line_array(const Arraybuffer& buffer);
+void draw_triangle_array(const Arraybuffer& buffer);
+void draw_point_primitives(const Arraybuffer& buffer);
+void draw_line_primitives(const Arraybuffer& buffer);
+void draw_triangle_primitives(const Arraybuffer& buffer);
 void draw_line_strip(const Arraybuffer& buffer);
 void draw_triangle_strip(const Arraybuffer& buffer);
+
+template <typename Type>
+void draw_points(const vector<Type>& points) {
+  static auto array = Arraybuffer{};
+  init_arraybuffer(array, points, false);
+  draw_point_array(array);
+}
 
 template <typename T>
 int set_vertex_attribute(Shape& shape, int index, const vector<T>& data) {
   assert(index < shape.vertex_attributes.size());
-  assert(shape.vertex_attributes[index].num == data.size());
+  // check all attributes have same size
   bind_shape(shape);
   // @Speed: update instead of delete
   delete_arraybuffer(shape.vertex_attributes[index]);
   init_arraybuffer(shape.vertex_attributes[index], data);
-  int elem_size = sizeof(T) / sizeof(float);
-  set_vertexattrib(index, shape.vertex_attributes[index], elem_size);
+  set_vertex_attribute(index, shape.vertex_attributes[index]);
+  return index;
+}
+
+template <typename T>
+int set_vertex_attribute(Shape& shape, int index, const T& data) {
+  assert(index < shape.vertex_attributes.size());
+  // check all attributes have same size
+  bind_shape(shape);
+  // @Speed: update instead of delete
+  //  delete_arraybuffer(shape.vertex_attributes[index]);
+  //  init_arraybuffer(shape.vertex_attributes[index], data);
+  // int elem_size = sizeof(T) / sizeof(float);
+  set_vertex_attribute(index, data);
+
   return index;
 }
 
@@ -238,8 +260,17 @@ int add_vertex_attribute(Shape& shape, const vector<T>& data) {
   int   index     = shape.vertex_attributes.size();
   auto& attribute = shape.vertex_attributes.emplace_back();
   init_arraybuffer(attribute, data);
-  int elem_size = sizeof(T) / sizeof(float);
-  set_vertexattrib(index, attribute, elem_size);
+  set_vertex_attribute(index, attribute);
+  return index;
+}
+
+template <typename T>
+int add_vertex_attribute(Shape& shape, const T& data) {
+  bind_shape(shape);
+  int index = shape.vertex_attributes.size();
+  shape.vertex_attributes.push_back({});
+  //    init_arraybuffer(attribute, data);
+  set_vertex_attribute(index, data);
   return index;
 }
 
@@ -295,7 +326,7 @@ void unbind_render_target();
 struct Camera {
   frame3f frame = identity3x4f;
   float   lens  = 0.050;
-  float   film  = 0.036;
+  vec2f   film  = {0.036, 0.024};
   float   near  = 0.001;
   float   far   = 10000;
   float   focus = flt_max;

@@ -22,6 +22,7 @@ bool init_opengl() {
   // init gl extensions
   if (!gladLoadGL())
     throw std::runtime_error("Cannot initialize OpenGL context.");
+  glDepthFunc(GL_LEQUAL);
   return true;
 }
 
@@ -32,6 +33,7 @@ void check_error() {
 }
 
 void clear_framebuffer(const vec4f& color, bool clear_depth) {
+  assert(glGetError() == GL_NO_ERROR);
   glClearColor(color.x, color.y, color.z, color.w);
   if (clear_depth) {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -277,7 +279,10 @@ void delete_arraybuffer(Arraybuffer& buffer) {
   buffer.num       = 0;
 }
 
-void bind_shader(const Shader& shader) { glUseProgram(shader.shader_id); }
+void bind_shader(const Shader& shader) {
+  assert(shader.shader_id);
+  glUseProgram(shader.shader_id);
+}
 void unbind_shader() { glUseProgram(0); }
 
 int get_uniform_location(const Shader& shader, const char* name) {
@@ -394,93 +399,70 @@ void set_uniform_texture(const Shader& shader, const char* name,
       get_uniform_location(shader, name_on), texture, unit);
 }
 
-int get_vertexattrib_location(const Shader& shader, const char* name) {
+int get_vertex_attribute_location(const Shader& shader, const char* name) {
   return glGetAttribLocation(shader.shader_id, name);
 }
 
-void set_vertexattrib(int location, const Arraybuffer& buffer, int elem_size) {
+void set_vertex_attribute(int location, float value) {
+  glVertexAttrib1f(location, value);
+}
+void set_vertex_attribute(int location, const vec2f& value) {
+  glVertexAttrib2f(location, value.x, value.y);
+}
+void set_vertex_attribute(int location, const vec3f& value) {
+  glVertexAttrib3f(location, value.x, value.y, value.z);
+}
+void set_vertex_attribute(int location, const vec4f& value) {
+  glVertexAttrib4f(location, value.x, value.y, value.z, value.w);
+}
+
+void set_vertex_attribute(int location, const Arraybuffer& buffer) {
   check_error();
   assert(buffer.id);
   glBindBuffer(GL_ARRAY_BUFFER, buffer.id);
   glEnableVertexAttribArray(location);
-  glVertexAttribPointer(location, elem_size, GL_FLOAT, false, 0, nullptr);
-  check_error();
-}
-
-void set_vertexattrib(int location, const Arraybuffer& buffer, float value) {
-  check_error();
-  if (buffer.id) {
-    glBindBuffer(GL_ARRAY_BUFFER, buffer.id);
-    glEnableVertexAttribArray(location);
-    glVertexAttribPointer(location, 1, GL_FLOAT, false, 0, nullptr);
-  } else {
-    glVertexAttrib1f(location, value);
-  }
+  glVertexAttribPointer(
+      location, buffer.elem_size / 4, GL_FLOAT, false, 0, nullptr);
   check_error();
 }
 
 void set_vertexattrib(
-    int location, const Arraybuffer& buffer, const vec2f& value) {
-  check_error();
-  if (buffer.id) {
-    glBindBuffer(GL_ARRAY_BUFFER, buffer.id);
-    glEnableVertexAttribArray(location);
-    glVertexAttribPointer(location, 2, GL_FLOAT, false, 0, nullptr);
-  } else {
-    glVertexAttrib2f(location, value.x, value.y);
-  }
-  check_error();
+    const Shader& shader, const char* name, const vec3f& value) {
+  auto location = get_vertex_attribute_location(shader, name);
+  set_vertex_attribute(location, value);
 }
 
-void set_vertexattrib(
-    int location, const Arraybuffer& buffer, const vec3f& value) {
-  check_error();
-  if (buffer.id) {
-    glBindBuffer(GL_ARRAY_BUFFER, buffer.id);
-    glEnableVertexAttribArray(location);
-    glVertexAttribPointer(location, 3, GL_FLOAT, false, 0, nullptr);
-  } else {
-    glVertexAttrib3f(location, value.x, value.y, value.z);
-  }
-  check_error();
+void draw_point_array(const Arraybuffer& buffer) {
+  glDrawArrays(GL_POINTS, 0, buffer.num);
 }
 
-void set_vertexattrib(
-    int location, const Arraybuffer& buffer, const vec4f& value) {
-  check_error();
-  if (buffer.id) {
-    glBindBuffer(GL_ARRAY_BUFFER, buffer.id);
-    glEnableVertexAttribArray(location);
-    glVertexAttribPointer(location, 4, GL_FLOAT, false, 0, nullptr);
-  } else {
-    glVertexAttrib4f(location, value.x, value.y, value.z, value.w);
-  }
-  check_error();
+void draw_line_array(const Arraybuffer& buffer) {
+  glDrawArrays(GL_LINES, 0, buffer.num);
 }
 
-void draw_points(const Arraybuffer& buffer) {
+void draw_triangle_array(const Arraybuffer& buffer) {
+  glDrawArrays(GL_TRIANGLES, 0, buffer.num);
+}
+
+void draw_point_primitives(const Arraybuffer& buffer) {
   check_error();
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.id);
   glDrawElements(GL_POINTS, buffer.num, GL_UNSIGNED_INT, nullptr);
   check_error();
 }
 
-void draw_lines(const Arraybuffer& buffer) {
+void draw_line_primitives(const Arraybuffer& buffer) {
   check_error();
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.id);
   glDrawElements(GL_LINES, buffer.num * 2, GL_UNSIGNED_INT, nullptr);
   check_error();
 }
 
-void draw_triangles(const Arraybuffer& buffer) {
+void draw_triangle_primitives(const Arraybuffer& buffer) {
   check_error();
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.id);
   glDrawElements(GL_TRIANGLES, buffer.num * 3, GL_UNSIGNED_INT, nullptr);
   check_error();
-}
-
-void draw_point_strip(const Arraybuffer& buffer) {
-  glDrawArrays(GL_POINTS, 0, buffer.num);
 }
 
 void draw_line_strip(const Arraybuffer& buffer) {
@@ -493,9 +475,10 @@ void draw_triangle_strip(const Arraybuffer& buffer) {
 
 void draw_image(const Texture& texture, int win_width, int win_height,
     const vec2f& image_center, float image_scale) {
-  static Shader      gl_prog      = {};
-  static Arraybuffer gl_texcoord  = {};
-  static Arraybuffer gl_triangles = {};
+  static Shader gl_prog = {};
+  //  static Arraybuffer gl_texcoord  = {};
+  //  static Arraybuffer gl_triangles = {};
+  static Shape quad;
 
   // initialization
   if (!gl_prog) {
@@ -523,9 +506,9 @@ void draw_image(const Texture& texture, int win_width, int win_height,
             }
         )";
     init_shader(gl_prog, true);
-    init_arraybuffer(
-        gl_texcoord, vector<vec2f>{{0, 0}, {0, 1}, {1, 1}, {1, 0}}, false);
-    init_arraybuffer(gl_triangles, vector<vec3i>{{0, 1, 2}, {0, 2, 3}}, false);
+
+    init_shape(quad);
+    add_vertex_attribute(quad, vector<vec2f>{{0, 0}, {0, 1}, {1, 1}, {1, 0}});
   }
 
   // draw
@@ -538,8 +521,8 @@ void draw_image(const Texture& texture, int win_width, int win_height,
       vec2f{(float)texture.size.x, (float)texture.size.y});
   set_uniform(gl_prog, "image_center", image_center);
   set_uniform(gl_prog, "image_scale", image_scale);
-  set_vertexattrib(gl_prog, "texcoord", gl_texcoord, zero2f);
-  draw_triangles(gl_triangles);
+  //  set_vertexattrib(gl_prog, "texcoord", gl_texcoord, zero2f);
+  draw_shape(quad);
   unbind_shader();
   check_error();
 }
@@ -598,8 +581,8 @@ void draw_image_background(const Texture& texture, int win_width,
       gl_prog, "border_size", vec2f{(float)border_size, (float)border_size});
   set_uniform(gl_prog, "image_center", image_center);
   set_uniform(gl_prog, "image_scale", image_scale);
-  set_vertexattrib(gl_prog, "texcoord", gl_texcoord, zero2f);
-  draw_triangles(gl_triangles);
+  set_vertex_attribute(gl_prog, "texcoord", gl_texcoord);
+  draw_triangle_primitives(gl_triangles);
   unbind_shader();
 }
 
@@ -616,6 +599,7 @@ void delete_shape(Shape& shape) {
   }
   delete_arraybuffer(shape.primitives);
   glDeleteVertexArrays(1, &shape.id);
+  shape = {};
 }
 
 void bind_shape(const Shape& shape) {
@@ -712,67 +696,60 @@ Shape make_vector_field_shape(
   return shape;
 }
 
+#define SURFACE_OFFSET 0.00002f
+
 Shape make_vector_field_shape(const vector<vec3f>& vector_field,
     const vector<vec3i>& triangles, const vector<vec3f>& positions,
     float scale) {
   assert(vector_field.size() == triangles.size());
-  auto shape = Shape{};
-  init_shape(shape);
-  auto size = vector_field.size();
-  auto pos  = vector<vec3f>(size * 2);
+
+  auto froms               = vector<vec3f>(vector_field.size());
+  auto vector_field_lifted = vector_field;
 
   for (int i = 0; i < triangles.size(); i++) {
     auto x      = positions[triangles[i].x];
     auto y      = positions[triangles[i].y];
     auto z      = positions[triangles[i].z];
     auto normal = triangle_normal(x, y, z);
-    normal *= scale;
-    auto center    = (x + y + z) / 3;
-    auto from      = center + 0.001f * normal;
-    auto to        = from + (scale * vector_field[i]) + 0.001f * normal;
-    pos[i * 2]     = from;
-    pos[i * 2 + 1] = to;
+    auto center = (x + y + z) / 3;
+    froms[i]    = center + SURFACE_OFFSET * normal;
+    vector_field_lifted[i] += SURFACE_OFFSET * normal;
   }
-  add_vertex_attribute(shape, positions);
-
-  auto elements = vector<vec2i>(size);
-  for (int i = 0; i < elements.size(); i++) {
-    elements[i] = {2 * i, 2 * i + 1};
-  }
-  init_primitives(shape, elements);
-  return shape;
+  return make_vector_field_shape(vector_field, froms, scale);
 }
 
 void draw_shape(const Shape& shape) {
   // @SPEED: This is for extra-safety, but may have
   //         an impact with many draw calls
   if (!shape.id) return;
+    if (shape.vertex_attributes.empty()) return;
 
+    
   bind_shape(shape);
+  auto& primitives = shape.primitives;
 
-  // draw strip of points, lines or triangles
-  if (!shape.primitives) {
+  if (primitives) {
+    if (shape.type == Shape::type::points) {
+      draw_point_primitives(primitives);
+    } else if (shape.type == Shape::type::lines) {
+      draw_line_primitives(primitives);
+    } else if (shape.type == Shape::type::triangles) {
+      draw_triangle_primitives(primitives);
+    }
+  } else {
     auto& positions = shape.vertex_attributes[0];
-    if (shape.type == Shape::type::points) {
-      draw_point_strip(positions);
-    } else if (shape.type == Shape::type::lines) {
-      draw_line_strip(positions);
-    } else if (shape.type == Shape::type::triangles) {
-      draw_triangle_strip(positions);
+    if (shape.is_strip) {
+        if(!positions) return;
+      if (shape.type == Shape::type::points) draw_point_array(positions);
+      if (shape.type == Shape::type::lines) draw_line_strip(positions);
+      if (shape.type == Shape::type::triangles) draw_triangle_strip(positions);
+    } else {
+      if (shape.type == Shape::type::points) draw_point_array(positions);
+      if (shape.type == Shape::type::lines) draw_line_array(positions);
+      if (shape.type == Shape::type::triangles) draw_triangle_array(positions);
     }
+    check_error();
   }
-  // draw points, lines or triangles
-  else {
-    auto& elements = shape.primitives;
-    if (shape.type == Shape::type::points) {
-      draw_points(elements);
-    } else if (shape.type == Shape::type::lines) {
-      draw_lines(elements);
-    } else if (shape.type == Shape::type::triangles) {
-      draw_triangles(elements);
-    }
-  }
-  check_error();
 }
 
 Camera make_lookat_camera(const vec3f& from, const vec3f& to, const vec3f& up) {
@@ -790,8 +767,8 @@ mat4f make_projection_matrix(const Camera& camera, const vec2i& viewport) {
   auto camera_aspect = (float)viewport.x / (float)viewport.y;
   auto camera_yfov =
       camera_aspect >= 0
-          ? (2 * yocto::atan(camera.film / (camera_aspect * 2 * camera.lens)))
-          : (2 * yocto::atan(camera.film / (2 * camera.lens)));
+          ? (2 * yocto::atan(camera.film.x / (camera_aspect * 2 * camera.lens)))
+          : (2 * yocto::atan(camera.film.x / (2 * camera.lens)));
   return perspective_mat(camera_yfov, camera_aspect, camera.near, camera.far);
 }
 

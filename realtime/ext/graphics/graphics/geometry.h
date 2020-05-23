@@ -613,13 +613,13 @@ struct surface_path {
 };
 
 // Trace integral path following the gradient of a scalar field
+// surface_path integrate_field(const vector<vec3i>& triangles,
+//     const vector<vec3f>& positions, const vector<vec3i>& adjacency,
+//     const vector<int>& tags, int tag, const vector<float>& field, int from);
 surface_path integrate_field(const vector<vec3i>& triangles,
     const vector<vec3f>& positions, const vector<vec3i>& adjacency,
-    const vector<int>& tags, int tag, const vector<float>& field, int from);
-surface_path integrate_field(const vector<vec3i>& triangles,
-    const vector<vec3f>& positions, const vector<vec3i>& adjacency,
-    const vector<int>& tags, int tag, const vector<float>& field, int from,
-    int to);
+    const vector<int>& tags, int tag, const vector<float>& field, int from_face,
+    vec2f from_uv, int to_face);
 
 vector<vec3f> make_positions_from_path(
     const surface_path& path, const vector<vec3f>& mesh_positions);
@@ -635,27 +635,28 @@ vec3f compute_gradient(const vec3i& triangle, const vector<vec3f>& positions,
 namespace yocto {
 
 // Load/save a shape as indexed meshes
-void load_shape(const string& filename, vector<int>& points,
-    vector<vec2i>& lines, vector<vec3i>& triangles, vector<vec4i>& quads,
-    vector<vec3f>& positions, vector<vec3f>& normals, vector<vec2f>& texcoords,
-    vector<vec4f>& colors, vector<float>& radius, bool flip_texcoords = true);
-void save_shape(const string& filename, const vector<int>& points,
-    const vector<vec2i>& lines, const vector<vec3i>& triangles,
-    const vector<vec4i>& quads, const vector<vec3f>& positions,
-    const vector<vec3f>& normals, const vector<vec2f>& texcoords,
-    const vector<vec4f>& colors, const vector<float>& radius,
-    bool ascii = false, bool flip_texcoords = true);
+// void load_shape(const string& filename, vector<int>& points,
+//     vector<vec2i>& lines, vector<vec3i>& triangles, vector<vec4i>& quads,
+//     vector<vec3f>& positions, vector<vec3f>& normals, vector<vec2f>&
+//     texcoords, vector<vec4f>& colors, vector<float>& radius, bool
+//     flip_texcoords = true);
+// void save_shape(const string& filename, const vector<int>& points,
+//     const vector<vec2i>& lines, const vector<vec3i>& triangles,
+//     const vector<vec4i>& quads, const vector<vec3f>& positions,
+//     const vector<vec3f>& normals, const vector<vec2f>& texcoords,
+//     const vector<vec4f>& colors, const vector<float>& radius,
+//     bool ascii = false, bool flip_texcoords = true);
 
-// Load/save a facevarying shape
-void load_fvshape(const string& filename, vector<vec4i>& quadspos,
-    vector<vec4i>& quadsnorm, vector<vec4i>& quadstexcoord,
-    vector<vec3f>& positions, vector<vec3f>& normals, vector<vec2f>& texcoords,
-    bool flip_texcoords = true);
-void save_fvshape(const string& filename, const vector<vec4i>& quadspos,
-    const vector<vec4i>& quadsnorm, const vector<vec4i>& quadstexcoord,
-    const vector<vec3f>& positions, const vector<vec3f>& normals,
-    const vector<vec2f>& texcoords, bool ascii = false,
-    bool flip_texcoords = true);
+// // Load/save a facevarying shape
+// void load_fvshape(const string& filename, vector<vec4i>& quadspos,
+//     vector<vec4i>& quadsnorm, vector<vec4i>& quadstexcoord,
+//     vector<vec3f>& positions, vector<vec3f>& normals, vector<vec2f>&
+//     texcoords, bool flip_texcoords = true);
+// void save_fvshape(const string& filename, const vector<vec4i>& quadspos,
+//     const vector<vec4i>& quadsnorm, const vector<vec4i>& quadstexcoord,
+//     const vector<vec3f>& positions, const vector<vec3f>& normals,
+//     const vector<vec2f>& texcoords, bool ascii = false,
+//     bool flip_texcoords = true);
 
 }  // namespace yocto
 

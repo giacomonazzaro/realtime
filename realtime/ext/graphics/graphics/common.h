@@ -193,13 +193,17 @@ inline void parallel_foreach(const vector<T>& values, Func&& func);
 // -----------------------------------------------------------------------------
 
 struct Commands {
-  vector<std::function<void()>> buffer = {};
-  void operator+=(std::function<void()>&& f) { buffer.push_back(f); }
+  vector<std::function<bool()>> buffer = {};
+  void operator+=(std::function<bool()>&& f) { buffer.push_back(f); }
 };
 
 inline void consume(Commands& commands) {
-  for (auto& f : commands.buffer) f();
-  commands.buffer.clear();
+  vector<std::function<bool()>> buffer = {};
+
+  for (auto& f : commands.buffer) {
+    if (f()) buffer.push_back(f);
+  }
+  commands.buffer = buffer;
 }
 
 // https://www.gingerbill.org/article/2015/08/19/defer-in-cpp/

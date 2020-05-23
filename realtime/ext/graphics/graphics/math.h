@@ -248,6 +248,8 @@ struct vec2f {
 
   float&       operator[](int i) { return (&x)[i]; }
   const float& operator[](int i) const { return (&x)[i]; }
+
+  constexpr int size() const { return 2; };
 };
 
 struct vec3f {
@@ -260,6 +262,8 @@ struct vec3f {
 
   float&       operator[](int i) { return (&x)[i]; }
   const float& operator[](int i) const { return (&x)[i]; }
+
+  constexpr int size() const { return 3; };
 };
 
 struct vec4f {
@@ -272,6 +276,8 @@ struct vec4f {
 
   float&       operator[](int i) { return (&x)[i]; }
   const float& operator[](int i) const { return (&x)[i]; }
+
+  constexpr int size() const { return 4; }
 };
 
 // Zero vector constants.
@@ -719,6 +725,8 @@ struct vec2i {
 
   int&       operator[](int i) { return (&x)[i]; }
   const int& operator[](int i) const { return (&x)[i]; }
+
+  constexpr int size() const { return 2; };
 };
 
 struct vec3i {
@@ -731,6 +739,8 @@ struct vec3i {
 
   int&       operator[](int i) { return (&x)[i]; }
   const int& operator[](int i) const { return (&x)[i]; }
+
+  constexpr int size() const { return 3; };
 };
 
 struct vec4i {
@@ -743,6 +753,8 @@ struct vec4i {
 
   int&       operator[](int i) { return (&x)[i]; }
   const int& operator[](int i) const { return (&x)[i]; }
+
+  constexpr int size() const { return 4; };
 };
 
 struct vec4b {
@@ -754,6 +766,8 @@ struct vec4b {
 
   byte&       operator[](int i) { return (&x)[i]; }
   const byte& operator[](int i) const { return (&x)[i]; }
+
+  constexpr int size() const { return 4; };
 };
 
 // Zero vector constants.

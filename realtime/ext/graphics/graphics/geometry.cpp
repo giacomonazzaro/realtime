@@ -2318,90 +2318,129 @@ static path_vertex step_from_point(const vector<vec3i>& triangles,
   return fallback_lerp;
 }
 
-surface_path integrate_field(const vector<vec3i>& triangles,
-    const vector<vec3f>& positions, const vector<vec3i>& adjacency,
-    const vector<int>& tags, int tag, const vector<float>& field, int from) {
-  auto opposite_vertex = [](const vec3i& tr, const vec2i& edge) -> int {
-    for (int i = 0; i < 3; ++i) {
-      if (tr[i] != edge.x && tr[i] != edge.y) return tr[i];
-    }
-    return -1;
+//surface_path integrate_field(const vector<vec3i>& triangles,
+//    const vector<vec3f>& positions, const vector<vec3i>& adjacency,
+//    const vector<int>& tags, int tag, const vector<float>& field, int from) {
+//  auto opposite_vertex = [](const vec3i& tr, const vec2i& edge) -> int {
+//    for (int i = 0; i < 3; ++i) {
+//      if (tr[i] != edge.x && tr[i] != edge.y) return tr[i];
+//    }
+//    return -1;
+//  };
+//  auto find_index = [](const vec3i& v, int x) -> int {
+//    if (v.x == x) return 0;
+//    if (v.y == x) return 1;
+//    if (v.z == x) return 2;
+//    return -1;
+//  };
+//
+//  // trace function
+//  auto lerps = vector<path_vertex>();
+//  auto lerp  = step_from_point(
+//      triangles, positions, adjacency, tags, field, from, -1, tag);
+//  if (lerp.face == -1) return {};
+//  lerps.push_back(lerp);
+//
+//  const int num_steps = 10000;
+//
+//  for (auto i = 0; i < num_steps; i++) {
+//    auto [old_edge, old_face, old_alpha] = lerps.back();
+//    if (old_face == -1) throw std::runtime_error("programmer error");
+//    auto point = (1.0f - old_alpha) * positions[old_edge.x] +
+//                 old_alpha * positions[old_edge.y];
+//
+//    auto face = adjacent_face(triangles, adjacency, old_face, old_edge);
+//    if (face == -1) {
+//      lerps.push_back({vec2i{-1, -1}, face, 0});
+//      return surface_path{from, -1, lerps};
+//    }
+//
+//    if (tags[face] != tag) {
+//      auto k  = find_index(triangles[face], old_edge.x);
+//      auto to = triangles[face][(k + 1) % 3];
+//
+//      // @Hack!: We store the tag of the reached region in edge.x
+//      auto edge = vec2i{to, tags[face]};
+//      lerps.push_back({edge, face, 0});
+//      return surface_path{from, to, lerps};
+//    }
+//
+//    auto direction = normalize(
+//        compute_gradient(triangles[face], positions, field));
+//
+//    auto front_idx = opposite_vertex(triangles[face], old_edge);
+//    if (front_idx == -1) {
+//      throw std::runtime_error("programmer error");
+//      return {};
+//    }
+//
+//    if (old_alpha < 0 || old_alpha > 1)
+//      throw std::runtime_error("programmer error");
+//
+//    auto& a = positions[old_edge.x];
+//    auto& b = positions[front_idx];
+//    auto& c = positions[old_edge.y];
+//
+//    auto [x, step_right] = step_from_edge_to_edge(point, a, b, c, direction);
+//
+//    auto edge = old_edge;
+//    if (step_right) {
+//      point  = (1 - x) * a + x * b;
+//      edge.y = front_idx;
+//    } else {
+//      point  = (1 - x) * b + x * c;
+//      edge.x = front_idx;
+//    }
+//    lerps.push_back({edge, face, x});
+//  }
+//
+//  throw std::runtime_error("integral path ended nowhere");
+//  return surface_path{from, 0, lerps};
+//}
+
+static path_vertex start_path(const vector<vec3i>& triangles,
+    const vector<vec3f>& positions, const vector<float>& field, int from_face,
+    vec2f from_uv) {
+  //
+  auto interpolate = [](const vec2f& uv, const vec3f& a, const vec3f& b,
+                         const vec3f& c) {
+    return a * uv.x + b * uv.y + c * (1 - uv.x - uv.y);
   };
-  auto find_index = [](const vec3i& v, int x) -> int {
-    if (v.x == x) return 0;
-    if (v.y == x) return 1;
-    if (v.z == x) return 2;
-    return -1;
+  auto is_direction_inbetween = [](const vec3f& right, const vec3f& left,
+                                    const vec3f& direction,
+                                    float        threshold = 0) -> bool {
+    auto normal      = cross(right, left);
+    auto cross_right = cross(right, direction);
+    auto cross_left  = cross(direction, left);
+    return dot(cross_right, normal) > threshold &&
+           dot(cross_left, normal) > threshold;
   };
+  auto  tr        = triangles[from_face];
+  auto  a         = positions[tr.x];
+  auto  b         = positions[tr.y];
+  auto  c         = positions[tr.z];
+  vec3f points[3] = {a, b, c};
+  auto  p         = interpolate(from_uv, a, b, c);
+  auto  grad      = normalize(
+      compute_gradient(triangles[from_face], positions, field));
 
-  // trace function
-  auto lerps = vector<path_vertex>();
-  auto lerp  = step_from_point(
-      triangles, positions, adjacency, tags, field, from, -1, tag);
-  if (lerp.face == -1) return {};
-  lerps.push_back(lerp);
-
-  const int num_steps = 10000;
-
-  for (auto i = 0; i < num_steps; i++) {
-    auto [old_edge, old_face, old_alpha] = lerps.back();
-    if (old_face == -1) throw std::runtime_error("programmer error");
-    auto point = (1.0f - old_alpha) * positions[old_edge.x] +
-                 old_alpha * positions[old_edge.y];
-
-    auto face = adjacent_face(triangles, adjacency, old_face, old_edge);
-    if (face == -1) {
-      lerps.push_back({vec2i{-1, -1}, face, 0});
-      return surface_path{from, -1, lerps};
+  for (int i = 0; i < 3; i++) {
+    auto right = points[i] - p;
+    auto left  = points[(i + 1) % 3] - p;
+    if (is_direction_inbetween(right, left, grad, 0)) {
+      auto  edge  = vec2i{tr[i], tr[(i + 1) % 3]};
+      float alpha = step_from_point_to_edge(right, left, grad);
+      return {edge, from_face, alpha};
     }
-
-    if (tags[face] != tag) {
-      auto k  = find_index(triangles[face], old_edge.x);
-      auto to = triangles[face][(k + 1) % 3];
-
-      // @Hack!: We store the tag of the reached region in edge.x
-      auto edge = vec2i{to, tags[face]};
-      lerps.push_back({edge, face, 0});
-      return surface_path{from, to, lerps};
-    }
-
-    auto direction = normalize(
-        compute_gradient(triangles[face], positions, field));
-
-    auto front_idx = opposite_vertex(triangles[face], old_edge);
-    if (front_idx == -1) {
-      throw std::runtime_error("programmer error");
-      return {};
-    }
-
-    if (old_alpha < 0 || old_alpha > 1)
-      throw std::runtime_error("programmer error");
-
-    auto& a = positions[old_edge.x];
-    auto& b = positions[front_idx];
-    auto& c = positions[old_edge.y];
-
-    auto [x, step_right] = step_from_edge_to_edge(point, a, b, c, direction);
-
-    auto edge = old_edge;
-    if (step_right) {
-      point  = (1 - x) * a + x * b;
-      edge.y = front_idx;
-    } else {
-      point  = (1 - x) * b + x * c;
-      edge.x = front_idx;
-    }
-    lerps.push_back({edge, face, x});
   }
 
-  throw std::runtime_error("integral path ended nowhere");
-  return surface_path{from, 0, lerps};
+  return {};
 }
 
 surface_path integrate_field(const vector<vec3i>& triangles,
     const vector<vec3f>& positions, const vector<vec3i>& adjacency,
-    const vector<int>& tags, int tag, const vector<float>& field, int from,
-    int to) {
+    const vector<int>& tags, int tag, const vector<float>& field, int from_face,
+    vec2f from_uv, int to_face) {
   auto opposite_vertex = [](const vec3i& tr, const vec2i& edge) -> int {
     for (int i = 0; i < 3; ++i) {
       if (tr[i] != edge.x && tr[i] != edge.y) return tr[i];
@@ -2413,10 +2452,7 @@ surface_path integrate_field(const vector<vec3i>& triangles,
   };
 
   auto lerps = vector<path_vertex>();
-
-  lerps.push_back(
-      step_from_point(triangles, positions, adjacency, tags, field, from, -1));
-
+  lerps.push_back(start_path(triangles, positions, field, from_face, from_uv));
   const int num_steps = 10000;
 
   for (int i = 0; i < num_steps; i++) {
@@ -2427,15 +2463,20 @@ surface_path integrate_field(const vector<vec3i>& triangles,
     auto face = adjacent_face(triangles, adjacency, old_face, old_edge);
     if (face == -1) break;
 
-    if (contains(triangles[face], to)) {
-      for (int k = 0; k < 3; ++k) {
-        auto edge = vec2i{triangles[face][k], triangles[face][(k + 1) % 3]};
-        if (edge.x == to) {
-          lerps.push_back({edge, face, 0});
-          return {from, to, lerps};
-        }
+//    if (contains(triangles[face], to)) {
+//      for (int k = 0; k < 3; ++k) {
+//        auto edge = vec2i{triangles[face][k], triangles[face][(k + 1) % 3]};
+//        if (edge.x == to) {
+//          lerps.push_back({edge, face, 0});
+//          return {from, to, lerps};
+//        }
+//      }
+//    }
+      
+      if (old_face == to_face) {
+            return {-1, -1, lerps};
       }
-    }
+
     auto direction = normalize(
         compute_gradient(triangles[face], positions, field));
 
@@ -2452,8 +2493,8 @@ surface_path integrate_field(const vector<vec3i>& triangles,
       auto lerp   = step_from_point(
           triangles, positions, adjacency, tags, field, vertex, old_face);
       lerps.push_back(lerp);
-      if (lerp.alpha == 0 && lerp.edge.x == to) break;
-      if (lerp.alpha == 1 && lerp.edge.y == to) break;
+//      if (lerp.alpha == 0 && lerp.edge.x == to) break;
+//      if (lerp.alpha == 1 && lerp.edge.y == to) break;
       continue;
     }
 
@@ -2476,11 +2517,11 @@ surface_path integrate_field(const vector<vec3i>& triangles,
     }
 
     lerps.push_back({edge, face, x});
-    if (x == 0 && edge.x == to) break;
-    if (x == 1 && edge.y == to) break;
+//    if (x == 0 && edge.x == to) break;
+//    if (x == 1 && edge.y == to) break;
   }
 
-  return {from, to, lerps};
+  return {-1, -1, lerps};
 }
 
 vector<vec3f> make_positions_from_path(
@@ -2508,18 +2549,18 @@ vector<vec3f> make_positions_from_path(
 }  // namespace integral_paths
 
 // Trace integral path following the gradient of a scalar field
+//surface_path integrate_field(const vector<vec3i>& triangles,
+//    const vector<vec3f>& positions, const vector<vec3i>& adjacency,
+//    const vector<int>& tags, int tag, const vector<float>& field, int from) {
+//  return integral_paths::integrate_field(
+//                                         triangles, positions, adjacency, tags, tag, field, from, {0,0}, -1);
+//}
 surface_path integrate_field(const vector<vec3i>& triangles,
     const vector<vec3f>& positions, const vector<vec3i>& adjacency,
-    const vector<int>& tags, int tag, const vector<float>& field, int from) {
+    const vector<int>& tags, int tag, const vector<float>& field, int from_face,
+    vec2f from_uv, int to_face) {
   return integral_paths::integrate_field(
-      triangles, positions, adjacency, tags, tag, field, from);
-}
-surface_path integrate_field(const vector<vec3i>& triangles,
-    const vector<vec3f>& positions, const vector<vec3i>& adjacency,
-    const vector<int>& tags, int tag, const vector<float>& field, int from,
-    int to) {
-  return integral_paths::integrate_field(
-      triangles, positions, adjacency, tags, tag, field, from, to);
+      triangles, positions, adjacency, tags, tag, field, from_face, from_uv, to_face);
 }
 
 vector<vec3f> make_positions_from_path(
@@ -3596,214 +3637,223 @@ void make_shape_preset(vector<int>& points, vector<vec2i>& lines,
 namespace yocto {
 
 // Load ply mesh
-void load_shape(const string& filename, vector<int>& points,
-    vector<vec2i>& lines, vector<vec3i>& triangles, vector<vec4i>& quads,
-    vector<vec3f>& positions, vector<vec3f>& normals, vector<vec2f>& texcoords,
-    vector<vec4f>& colors, vector<float>& radius, bool flip_texcoord) {
-  points    = {};
-  lines     = {};
-  triangles = {};
-  quads     = {};
-  positions = {};
-  normals   = {};
-  texcoords = {};
-  colors    = {};
-  radius    = {};
+// void load_shape(const string& filename, vector<int>& points,
+//     vector<vec2i>& lines, vector<vec3i>& triangles, vector<vec4i>& quads,
+//     vector<vec3f>& positions, vector<vec3f>& normals, vector<vec2f>&
+//     texcoords, vector<vec4f>& colors, vector<float>& radius, bool
+//     flip_texcoord) {
+//   points    = {};
+//   lines     = {};
+//   triangles = {};
+//   quads     = {};
+//   positions = {};
+//   normals   = {};
+//   texcoords = {};
+//   colors    = {};
+//   radius    = {};
 
-  try {
-    auto ext = get_extension(filename);
-    if (ext == ".ply" || ext == ".PLY") {
-      // open ply
-      auto ply = ply_model{};
-      load_ply(filename, ply);
+//   try {
+//     auto ext = get_extension(filename);
+//     if (ext == ".ply" || ext == ".PLY") {
+//       // open ply
+//       auto ply = ply_model{};
+//       load_ply(filename, ply);
 
-      // gets vertex
-      positions = get_ply_positions(ply);
-      normals   = get_ply_normals(ply);
-      texcoords = get_ply_texcoords(ply, flip_texcoord);
-      colors    = get_ply_colors(ply);
-      radius    = get_ply_radius(ply);
+//       // gets vertex
+//       positions = get_ply_positions(ply);
+//       normals   = get_ply_normals(ply);
+//       texcoords = get_ply_texcoords(ply, flip_texcoord);
+//       colors    = get_ply_colors(ply);
+//       radius    = get_ply_radius(ply);
 
-      // get faces
-      if (has_ply_quads(ply)) {
-        quads = get_ply_quads(ply);
-      } else {
-        triangles = get_ply_triangles(ply);
-      }
-      lines  = get_ply_lines(ply);
-      points = get_ply_points(ply);
-    } else if (ext == ".obj" || ext == ".OBJ") {
-      // load obj
-      auto obj = obj_model();
-      load_obj(filename, obj, true);
+//       // get faces
+//       if (has_ply_quads(ply)) {
+//         quads = get_ply_quads(ply);
+//       } else {
+//         triangles = get_ply_triangles(ply);
+//       }
+//       lines  = get_ply_lines(ply);
+//       points = get_ply_points(ply);
+//     } else if (ext == ".obj" || ext == ".OBJ") {
+//       // load obj
+//       auto obj = obj_model();
+//       load_obj(filename, obj, true);
 
-      // get shape
-      if (obj.shapes.empty()) return;
-      if (obj.shapes.size() > 1)
-        throw std::runtime_error("can only support one element type");
-      auto& shape = obj.shapes.front();
-      if (shape.points.empty() && shape.lines.empty() && shape.faces.empty())
-        return;
+//       // get shape
+//       if (obj.shapes.empty()) return;
+//       if (obj.shapes.size() > 1)
+//         throw std::runtime_error("can only support one element type");
+//       auto& shape = obj.shapes.front();
+//       if (shape.points.empty() && shape.lines.empty() && shape.faces.empty())
+//         return;
 
-      // decide what to do and get properties
-      auto materials  = vector<string>{};
-      auto ematerials = vector<int>{};
-      auto has_quads  = has_obj_quads(shape);
-      if (!shape.faces.empty() && !has_quads) {
-        get_obj_triangles(obj, shape, triangles, positions, normals, texcoords,
-            materials, ematerials, flip_texcoord);
-      } else if (!shape.faces.empty() && has_quads) {
-        get_obj_quads(obj, shape, quads, positions, normals, texcoords,
-            materials, ematerials, flip_texcoord);
-      } else if (!shape.lines.empty()) {
-        get_obj_lines(obj, shape, lines, positions, normals, texcoords,
-            materials, ematerials, flip_texcoord);
-      } else if (!shape.points.empty()) {
-        get_obj_points(obj, shape, points, positions, normals, texcoords,
-            materials, ematerials, flip_texcoord);
-      } else {
-        throw std::runtime_error("should not have gotten here");
-      }
-    } else if (ext == ".hair" || ext == ".HAIR") {
-      load_cyhair_shape(
-          filename, lines, positions, normals, texcoords, colors, radius);
-    } else {
-      throw std::runtime_error("unsupported shape type " + ext);
-    }
+//       // decide what to do and get properties
+//       auto materials  = vector<string>{};
+//       auto ematerials = vector<int>{};
+//       auto has_quads  = has_obj_quads(shape);
+//       if (!shape.faces.empty() && !has_quads) {
+//         get_obj_triangles(obj, shape, triangles, positions, normals,
+//         texcoords,
+//             materials, ematerials, flip_texcoord);
+//       } else if (!shape.faces.empty() && has_quads) {
+//         get_obj_quads(obj, shape, quads, positions, normals, texcoords,
+//             materials, ematerials, flip_texcoord);
+//       } else if (!shape.lines.empty()) {
+//         get_obj_lines(obj, shape, lines, positions, normals, texcoords,
+//             materials, ematerials, flip_texcoord);
+//       } else if (!shape.points.empty()) {
+//         get_obj_points(obj, shape, points, positions, normals, texcoords,
+//             materials, ematerials, flip_texcoord);
+//       } else {
+//         throw std::runtime_error("should not have gotten here");
+//       }
+//     } else if (ext == ".hair" || ext == ".HAIR") {
+//       load_cyhair_shape(
+//           filename, lines, positions, normals, texcoords, colors, radius);
+//     } else {
+//       throw std::runtime_error("unsupported shape type " + ext);
+//     }
 
-    if (positions.empty())
-      throw std::runtime_error("vertex positions not present");
-  } catch (std::exception& e) {
-    throw std::runtime_error("cannot load shape " + filename + "\n" + e.what());
-  }
-}
+//     if (positions.empty())
+//       throw std::runtime_error("vertex positions not present");
+//   } catch (std::exception& e) {
+//     throw std::runtime_error("cannot load shape " + filename + "\n" +
+//     e.what());
+//   }
+// }
 
-// Save ply mesh
-void save_shape(const string& filename, const vector<int>& points,
-    const vector<vec2i>& lines, const vector<vec3i>& triangles,
-    const vector<vec4i>& quads, const vector<vec3f>& positions,
-    const vector<vec3f>& normals, const vector<vec2f>& texcoords,
-    const vector<vec4f>& colors, const vector<float>& radius, bool ascii,
-    bool flip_texcoord) {
-  try {
-    auto ext = get_extension(filename);
-    if (ext == ".ply" || ext == ".PLY") {
-      // create ply
-      auto ply = ply_model{};
-      add_ply_positions(ply, positions);
-      add_ply_normals(ply, normals);
-      add_ply_texcoords(ply, texcoords, flip_texcoord);
-      add_ply_colors(ply, colors);
-      add_ply_radius(ply, radius);
-      add_ply_faces(ply, triangles, quads);
-      add_ply_lines(ply, lines);
-      add_ply_points(ply, points);
-      save_ply(filename, ply);
-    } else if (ext == ".obj" || ext == ".OBJ") {
-      auto obj = obj_model{};
-      if (!triangles.empty()) {
-        add_obj_triangles(obj, "", triangles, positions, normals, texcoords, {},
-            {}, flip_texcoord);
-      } else if (!quads.empty()) {
-        add_obj_quads(obj, "", quads, positions, normals, texcoords, {}, {},
-            flip_texcoord);
-      } else if (!lines.empty()) {
-        add_obj_lines(obj, "", lines, positions, normals, texcoords, {}, {},
-            flip_texcoord);
-      } else if (!points.empty()) {
-        add_obj_points(obj, "", points, positions, normals, texcoords, {}, {},
-            flip_texcoord);
-      } else {
-        throw std::runtime_error("do not support empty shapes");
-      }
-      save_obj(filename, obj);
-    } else {
-      throw std::runtime_error("unsupported shape type " + ext);
-    }
-  } catch (std::exception& e) {
-    throw std::runtime_error("cannot save shape " + filename + "\n" + e.what());
-  }
-}
+// // Save ply mesh
+// void save_shape(const string& filename, const vector<int>& points,
+//     const vector<vec2i>& lines, const vector<vec3i>& triangles,
+//     const vector<vec4i>& quads, const vector<vec3f>& positions,
+//     const vector<vec3f>& normals, const vector<vec2f>& texcoords,
+//     const vector<vec4f>& colors, const vector<float>& radius, bool ascii,
+//     bool flip_texcoord) {
+//   try {
+//     auto ext = get_extension(filename);
+//     if (ext == ".ply" || ext == ".PLY") {
+//       // create ply
+//       auto ply = ply_model{};
+//       add_ply_positions(ply, positions);
+//       add_ply_normals(ply, normals);
+//       add_ply_texcoords(ply, texcoords, flip_texcoord);
+//       add_ply_colors(ply, colors);
+//       add_ply_radius(ply, radius);
+//       add_ply_faces(ply, triangles, quads);
+//       add_ply_lines(ply, lines);
+//       add_ply_points(ply, points);
+//       save_ply(filename, ply);
+//     } else if (ext == ".obj" || ext == ".OBJ") {
+//       auto obj = obj_model{};
+//       if (!triangles.empty()) {
+//         add_obj_triangles(obj, "", triangles, positions, normals, texcoords,
+//         {},
+//             {}, flip_texcoord);
+//       } else if (!quads.empty()) {
+//         add_obj_quads(obj, "", quads, positions, normals, texcoords, {}, {},
+//             flip_texcoord);
+//       } else if (!lines.empty()) {
+//         add_obj_lines(obj, "", lines, positions, normals, texcoords, {}, {},
+//             flip_texcoord);
+//       } else if (!points.empty()) {
+//         add_obj_points(obj, "", points, positions, normals, texcoords, {},
+//         {},
+//             flip_texcoord);
+//       } else {
+//         throw std::runtime_error("do not support empty shapes");
+//       }
+//       save_obj(filename, obj);
+//     } else {
+//       throw std::runtime_error("unsupported shape type " + ext);
+//     }
+//   } catch (std::exception& e) {
+//     throw std::runtime_error("cannot save shape " + filename + "\n" +
+//     e.what());
+//   }
+// }
 
-// Load ply mesh
-void load_fvshape(const string& filename, vector<vec4i>& quadspos,
-    vector<vec4i>& quadsnorm, vector<vec4i>& quadstexcoord,
-    vector<vec3f>& positions, vector<vec3f>& normals, vector<vec2f>& texcoords,
-    bool flip_texcoord) {
-  quadspos      = {};
-  quadsnorm     = {};
-  quadstexcoord = {};
-  positions     = {};
-  normals       = {};
-  texcoords     = {};
+// // Load ply mesh
+// void load_fvshape(const string& filename, vector<vec4i>& quadspos,
+//     vector<vec4i>& quadsnorm, vector<vec4i>& quadstexcoord,
+//     vector<vec3f>& positions, vector<vec3f>& normals, vector<vec2f>&
+//     texcoords, bool flip_texcoord) {
+//   quadspos      = {};
+//   quadsnorm     = {};
+//   quadstexcoord = {};
+//   positions     = {};
+//   normals       = {};
+//   texcoords     = {};
 
-  try {
-    auto ext = get_extension(filename);
-    if (ext == ".ply" || ext == ".PLY") {
-      auto ply = ply_model{};
-      load_ply(filename, ply);
-      positions = get_ply_positions(ply);
-      normals   = get_ply_normals(ply);
-      texcoords = get_ply_texcoords(ply, flip_texcoord);
-      quadspos  = get_ply_quads(ply);
-      if (!normals.empty()) quadsnorm = quadspos;
-      if (!texcoords.empty()) quadstexcoord = quadspos;
-    } else if (ext == ".obj" || ext == ".OBJ") {
-      auto obj = obj_model();
-      load_obj(filename, obj, true);
-      if (obj.shapes.empty()) return;
-      if (obj.shapes.size() > 1)
-        throw std::runtime_error("can only support one element type");
-      auto& shape = obj.shapes.front();
-      if (shape.faces.empty()) return;
-      auto materials  = vector<string>{};
-      auto ematerials = vector<int>{};
-      get_obj_fvquads(obj, shape, quadspos, quadsnorm, quadstexcoord, positions,
-          normals, texcoords, materials, ematerials, flip_texcoord);
-    } else {
-      throw std::runtime_error("unsupported shape type " + ext);
-    }
-    if (positions.empty())
-      throw std::runtime_error("vertex positions not present");
-  } catch (std::exception& e) {
-    throw std::runtime_error("cannot load shape " + filename + "\n" + e.what());
-  }
-}
+//   try {
+//     auto ext = get_extension(filename);
+//     if (ext == ".ply" || ext == ".PLY") {
+//       auto ply = ply_model{};
+//       load_ply(filename, ply);
+//       positions = get_ply_positions(ply);
+//       normals   = get_ply_normals(ply);
+//       texcoords = get_ply_texcoords(ply, flip_texcoord);
+//       quadspos  = get_ply_quads(ply);
+//       if (!normals.empty()) quadsnorm = quadspos;
+//       if (!texcoords.empty()) quadstexcoord = quadspos;
+//     } else if (ext == ".obj" || ext == ".OBJ") {
+//       auto obj = obj_model();
+//       load_obj(filename, obj, true);
+//       if (obj.shapes.empty()) return;
+//       if (obj.shapes.size() > 1)
+//         throw std::runtime_error("can only support one element type");
+//       auto& shape = obj.shapes.front();
+//       if (shape.faces.empty()) return;
+//       auto materials  = vector<string>{};
+//       auto ematerials = vector<int>{};
+//       get_obj_fvquads(obj, shape, quadspos, quadsnorm, quadstexcoord,
+//       positions,
+//           normals, texcoords, materials, ematerials, flip_texcoord);
+//     } else {
+//       throw std::runtime_error("unsupported shape type " + ext);
+//     }
+//     if (positions.empty())
+//       throw std::runtime_error("vertex positions not present");
+//   } catch (std::exception& e) {
+//     throw std::runtime_error("cannot load shape " + filename + "\n" +
+//     e.what());
+//   }
+// }
 
-// Save ply mesh
-void save_fvshape(const string& filename, const vector<vec4i>& quadspos,
-    const vector<vec4i>& quadsnorm, const vector<vec4i>& quadstexcoord,
-    const vector<vec3f>& positions, const vector<vec3f>& normals,
-    const vector<vec2f>& texcoords, bool ascii, bool flip_texcoord) {
-  try {
-    auto ext = get_extension(filename);
-    if (ext == ".ply" || ext == ".PLY") {
-      auto split_quads         = vector<vec4i>{};
-      auto split_positions     = vector<vec3f>{};
-      auto split_normals       = vector<vec3f>{};
-      auto split_texturecoords = vector<vec2f>{};
-      split_facevarying(split_quads, split_positions, split_normals,
-          split_texturecoords, quadspos, quadsnorm, quadstexcoord, positions,
-          normals, texcoords);
-      return save_shape(filename, {}, {}, {}, split_quads, split_positions,
-          split_normals, split_texturecoords, {}, {}, ascii, flip_texcoord);
-    } else if (ext == ".obj" || ext == ".OBJ") {
-      // Obj model
-      auto obj = obj_model{};
+// // Save ply mesh
+// void save_fvshape(const string& filename, const vector<vec4i>& quadspos,
+//     const vector<vec4i>& quadsnorm, const vector<vec4i>& quadstexcoord,
+//     const vector<vec3f>& positions, const vector<vec3f>& normals,
+//     const vector<vec2f>& texcoords, bool ascii, bool flip_texcoord) {
+//   try {
+//     auto ext = get_extension(filename);
+//     if (ext == ".ply" || ext == ".PLY") {
+//       auto split_quads         = vector<vec4i>{};
+//       auto split_positions     = vector<vec3f>{};
+//       auto split_normals       = vector<vec3f>{};
+//       auto split_texturecoords = vector<vec2f>{};
+//       split_facevarying(split_quads, split_positions, split_normals,
+//           split_texturecoords, quadspos, quadsnorm, quadstexcoord, positions,
+//           normals, texcoords);
+//       return save_shape(filename, {}, {}, {}, split_quads, split_positions,
+//           split_normals, split_texturecoords, {}, {}, ascii, flip_texcoord);
+//     } else if (ext == ".obj" || ext == ".OBJ") {
+//       // Obj model
+//       auto obj = obj_model{};
 
-      // Add obj data
-      add_obj_fvquads(obj, "", quadspos, quadsnorm, quadstexcoord, positions,
-          normals, texcoords, {}, {}, flip_texcoord);
+//       // Add obj data
+//       add_obj_fvquads(obj, "", quadspos, quadsnorm, quadstexcoord, positions,
+//           normals, texcoords, {}, {}, flip_texcoord);
 
-      // Save
-      save_obj(filename, obj);
-    } else {
-      throw std::runtime_error("unsupported shape type " + ext);
-    }
-  } catch (std::exception& e) {
-    throw std::runtime_error("cannot save shape " + filename + "\n" + e.what());
-  }
-}
+//       // Save
+//       save_obj(filename, obj);
+//     } else {
+//       throw std::runtime_error("unsupported shape type " + ext);
+//     }
+//   } catch (std::exception& e) {
+//     throw std::runtime_error("cannot save shape " + filename + "\n" +
+//     e.what());
+//   }
+// }
 
 }  // namespace yocto
 
