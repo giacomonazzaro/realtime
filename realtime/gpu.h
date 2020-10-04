@@ -1,8 +1,13 @@
 #ifndef _REALTIME_GPU_
 #define _REALTIME_GPU_
 
-#include <graphics/image.h>
-#include <graphics/math.h>
+// -----------------------------------------------------------------------------
+// INCLUDES
+// -----------------------------------------------------------------------------
+
+// #include <graphics/image.h>
+// #include <graphics/math.h>
+#include <yocto/yocto_image.h>
 
 #include <functional>   // std::function
 #include <type_traits>  // std::is_floating_point
@@ -18,6 +23,20 @@ void set_viewport(const vec4i& viewport);
 void set_wireframe(bool enabled);
 void set_blending(bool enabled);
 void set_point_size(int size);
+
+enum struct DepthTest {
+  never,     // Never passes.
+  less,      // Passes if the incoming depth is less than the stored depth.
+  equal,     // Passes if the incoming depth is equal to the stored depth.
+  lequal,    // Passes if the incoming depth is less than or equal to the stored
+             // depth.
+  greater,   // Passes if the incoming depth is greater than the stored depth.
+  notequal,  // Passes if the incoming depth is not equal to the stored depth.
+  gequal,    // Passes if the incoming depth is greater than or equal to the
+             // stored depth.
+  always     // Always passes.
+};
+void set_depth_test(DepthTest flag);
 
 /* IMPORTANT: ************************************************************
 
@@ -51,12 +70,10 @@ void init_texture(Texture& texture, const image<vec4b>& img, bool as_srgb,
 void update_texture(Texture& texture, const image<vec4f>& img, bool mipmap);
 void update_texture(Texture& texture, const image<vec4b>& img, bool mipmap);
 
-void update_texture_region(Texture& texture, const image<vec4f>& img,
-    const image_region& region, bool mipmap);
-void update_texture_region(Texture& texture, const image<vec4b>& img,
-    const image_region& region, bool mipmap);
-
-image<vec4f> capture_screenshot();
+// void update_texture_region(Texture& texture, const image<vec4f>& img,
+//                            const image_region& region, bool mipmap);
+// void update_texture_region(Texture& texture, const image<vec4b>& img,
+//                            const image_region& region, bool mipmap);
 
 void delete_texture(Texture& texture);
 
@@ -137,6 +154,8 @@ void set_uniform(int location, const mat3f& value);
 void set_uniform(int location, const mat4f& value);
 void set_uniform(int location, const frame3f& value);
 
+inline void set_uniform(const Shader& shader) {}
+
 template <typename T>
 inline void set_uniform(
     const Shader& shader, const char* name, const T& value) {
@@ -160,21 +179,18 @@ void set_uniform_texture(
 void set_uniform_texture(const Shader& shader, const char* name,
     const char* name_on, const Texture& texture, int unit);
 
-int get_vertexattrib_location(const Shader& shader, const char* name);
+int  get_vertex_attribute_location(const Shader& shader, const char* name);
+void set_vertex_attribute(int location, const Arraybuffer& buffer);
+void set_vertex_attribute(int location, float value);
+void set_vertex_attribute(int location, const vec2f& value);
+void set_vertex_attribute(int location, const vec3f& value);
+void set_vertex_attribute(int location, const vec4f& value);
 
-void set_vertexattrib(int location, const Arraybuffer& buffer, int elem_size);
-void set_vertexattrib(int location, const Arraybuffer& buffer, float value);
-void set_vertexattrib(
-    int location, const Arraybuffer& buffer, const vec2f& value);
-void set_vertexattrib(
-    int location, const Arraybuffer& buffer, const vec3f& value);
-void set_vertexattrib(
-    int location, const Arraybuffer& buffer, const vec4f& value);
-
-template <typename T>
-inline void set_vertexattrib(const Shader& shader, const char* name,
-    const Arraybuffer& buffer, const T& value) {
-  set_vertexattrib(get_vertexattrib_location(shader, name), buffer, value);
+template <typename Type>
+void set_vertex_attribute(
+    const Shader& shader, const char* name, const Type& buffer) {
+  auto location = get_vertex_attribute_location(shader, name);
+  set_vertex_attribute(location, buffer);
 }
 
 template <typename Type>
@@ -202,6 +218,7 @@ struct Shape {
   vector<Arraybuffer> vertex_attributes = {};
   Arraybuffer         primitives        = {};
   uint                id                = 0;
+  bool                is_strip          = true;
 
   enum struct type { points, lines, triangles };
   type type = type::triangles;
@@ -212,23 +229,45 @@ void delete_shape(Shape& shape);
 void bind_shape(const Shape& shape);
 void draw_shape(const Shape& shape);
 
-void draw_points(const Arraybuffer& buffer);
-void draw_lines(const Arraybuffer& buffer);
-void draw_triangles(const Arraybuffer& buffer);
-void draw_point_strip(const Arraybuffer& buffer);
+void draw_point_array(const Arraybuffer& buffer);
+void draw_line_array(const Arraybuffer& buffer);
+void draw_triangle_array(const Arraybuffer& buffer);
+void draw_point_primitives(const Arraybuffer& buffer);
+void draw_line_primitives(const Arraybuffer& buffer);
+void draw_triangle_primitives(const Arraybuffer& buffer);
 void draw_line_strip(const Arraybuffer& buffer);
 void draw_triangle_strip(const Arraybuffer& buffer);
+
+template <typename Type>
+void draw_points(const vector<Type>& points) {
+  static auto array = Arraybuffer{};
+  init_arraybuffer(array, points, false);
+  draw_point_array(array);
+}
 
 template <typename T>
 int set_vertex_attribute(Shape& shape, int index, const vector<T>& data) {
   assert(index < shape.vertex_attributes.size());
-  assert(shape.vertex_attributes[index].num == data.size());
+  // check all attributes have same size
   bind_shape(shape);
   // @Speed: update instead of delete
   delete_arraybuffer(shape.vertex_attributes[index]);
   init_arraybuffer(shape.vertex_attributes[index], data);
-  int elem_size = sizeof(T) / sizeof(float);
-  set_vertexattrib(index, shape.vertex_attributes[index], elem_size);
+  set_vertex_attribute(index, shape.vertex_attributes[index]);
+  return index;
+}
+
+template <typename T>
+int set_vertex_attribute(Shape& shape, int index, const T& data) {
+  assert(index < shape.vertex_attributes.size());
+  // check all attributes have same size
+  bind_shape(shape);
+  // @Speed: update instead of delete
+  //  delete_arraybuffer(shape.vertex_attributes[index]);
+  //  init_arraybuffer(shape.vertex_attributes[index], data);
+  // int elem_size = sizeof(T) / sizeof(float);
+  set_vertex_attribute(index, data);
+
   return index;
 }
 
@@ -240,8 +279,17 @@ int add_vertex_attribute(Shape& shape, const vector<T>& data) {
   int   index     = shape.vertex_attributes.size();
   auto& attribute = shape.vertex_attributes.emplace_back();
   init_arraybuffer(attribute, data);
-  int elem_size = sizeof(T) / sizeof(float);
-  set_vertexattrib(index, attribute, elem_size);
+  set_vertex_attribute(index, attribute);
+  return index;
+}
+
+template <typename T>
+int add_vertex_attribute(Shape& shape, const T& data) {
+  bind_shape(shape);
+  int index = shape.vertex_attributes.size();
+  shape.vertex_attributes.push_back({});
+  //    init_arraybuffer(attribute, data);
+  set_vertex_attribute(index, data);
   return index;
 }
 
@@ -289,8 +337,9 @@ struct Rendertarget {
 Rendertarget make_render_target(
     const vec2i& size, bool as_float, bool as_srgb, bool linear, bool mipmap);
 
-void bind_render_target(const Rendertarget& target);
-void unbind_render_target();
+void         bind_render_target(const Rendertarget& target);
+void         unbind_render_target();
+image<vec4f> capture_screenshot();
 
 // A Camera holds the information required to compute the view-projection matrix
 // needed for 3d rendering.

@@ -1,7 +1,9 @@
 #include "window.h"
 
 #include <GLFW/glfw3.h>
-#include <graphics/commonio.h>
+#include <yocto/yocto_parallel.h>
+
+#include <unordered_map>
 
 // break
 
@@ -15,6 +17,8 @@
 
 namespace window {
 
+using namespace std::string_literals;
+
 void update_camera(frame3f& frame, float& focus, const Window& win) {
   if (win.input.is_gui_active) return;
 
@@ -26,13 +30,13 @@ void update_camera(frame3f& frame, float& focus, const Window& win) {
   auto shift_down  = win.input.modifier_shift;
 
   // handle mouse and keyboard for navigation
-  if ((mouse_left || mouse_right) && !alt_down) {
+  if (mouse_left) {
     auto dolly  = 0.0f;
     auto pan    = zero2f;
     auto rotate = zero2f;
-    if (mouse_left && !shift_down) rotate = (mouse_pos - last_pos) / 100.0f;
+    if (mouse_left && shift_down) rotate = (mouse_pos - last_pos) / 100.0f;
     if (mouse_right) dolly = (mouse_pos.y - last_pos.y) / 100.0f;
-    if (mouse_left && shift_down) pan = (mouse_pos - last_pos) * focus / 200.0f;
+    if (mouse_left && alt_down) pan = (mouse_pos - last_pos) * focus / 200.0f;
     pan.x    = -pan.x;
     rotate.y = -rotate.y;
     update_turntable(frame, focus, rotate, dolly, pan);
@@ -70,7 +74,8 @@ bool Joystick::X() const { return buttons[GLFW_GAMEPAD_BUTTON_X]; }
 bool Joystick::Y() const { return buttons[GLFW_GAMEPAD_BUTTON_Y]; }
 // clang-format on
 
-void init_window(Window& win, const vec2i& size, const string& title) {
+void init_window(
+    Window& win, const vec2i& size, const string& title, bool visible) {
   // init glfw
   if (!glfwInit())
     throw std::runtime_error(
@@ -81,6 +86,10 @@ void init_window(Window& win, const vec2i& size, const string& title) {
 #if __APPLE__
   glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
+
+  if (!visible) {
+    glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+  }
 
   // create window
   win.glfw = glfwCreateWindow(size.x, size.y, title.c_str(), nullptr, nullptr);
@@ -94,7 +103,8 @@ void init_window(Window& win, const vec2i& size, const string& title) {
   init_callbacks(win);
 
   // TODO
-  // glfwSetJoystickCallback([](int id, int event) { update_joysticks(win); });
+  // glfwSetJoystickCallback([](int id, int event) { update_joysticks(win);
+  // });
 
   init_joysticks(win);
 
@@ -185,7 +195,7 @@ void run_draw_loop(Window& win, function<void(Window&)> draw, bool wait) {
 
 vec2f get_mouse_pos_normalized(const Window& win, bool isometric) {
   auto& pos    = win.input.mouse_pos;
-  auto  size   = vec2f(win.size.x, win.size.y);
+  auto  size   = vec2f{(float)win.size.x, (float)win.size.y};
   auto  result = vec2f{2 * (pos.x / size.x) - 1, 1 - 2 * (pos.y / size.y)};
   if (isometric) {
     result.x *= float(win.size.x) / float(win.size.y);
@@ -592,6 +602,9 @@ void gui_label(Window& win, const char* lbl, const std::string& label) {
   ImGui::LabelText(lbl, "%s", label.c_str());
 }
 
+void gui_text(Window& win, const string& text) {
+  ImGui::Text("%s", text.c_str());
+}
 void gui_separator(Window& win) { ImGui::Separator(); }
 
 void continue_line(Window& win) { ImGui::SameLine(); }
@@ -707,15 +720,19 @@ bool gui_hdrcoloredit(Window& win, const char* lbl, vec4f& value) {
   auto exposure = 0.0f;
   auto scale    = max(xyz(color));
   if (scale > 1) {
-    xyz(color) /= scale;
+    color.x /= scale;
+    color.y /= scale;
+    color.z /= scale;
     exposure = yocto::log2(scale);
   }
   auto edit_exposure = gui_slider(
       win, (lbl + " [exp]"s).c_str(), exposure, 0, 10);
   auto edit_color = gui_coloredit(win, (lbl + " [col]"s).c_str(), color);
   if (edit_exposure || edit_color) {
-    xyz(value) = xyz(color) * yocto::exp2(exposure);
-    value.w    = color.w;
+    value.x = color.x * yocto::exp2(exposure);
+    value.y = color.y * yocto::exp2(exposure);
+    value.z = color.z * yocto::exp2(exposure);
+    value.w = color.w;
     return true;
   } else {
     return false;
