@@ -1,10 +1,11 @@
 #include "gpu.h"
 
-// #include <graphics/common.h>
-// #include <graphics/commonio.h>
-#include <yocto/yocto_common.h>
-#include <yocto/yocto_commonio.h>
-#include <yocto/yocto_geometry.h>
+#include <graphics/common.h>
+#include <graphics/commonio.h>
+// #include <yocto/yocto_common.h>
+// #include <yocto/yocto_commonio.h>
+// #include <yocto/yocto_geometry.h>
+#include <cassert>
 
 //
 
@@ -17,6 +18,11 @@
 #define GL_SILENCE_DEPRECATION
 #endif
 #include "ext/glad/glad.h"
+
+#ifdef _WIN32
+#undef near
+#undef far
+#endif
 
 namespace gpu {
 using namespace yocto;
@@ -109,9 +115,9 @@ void set_depth_test(DepthTest flag) {
 void set_point_size(int size) { glPointSize(size); }
 
 void load_shader_code(Shader& shader) {
-  auto error = string{};
-  load_text(shader.vertex_filename, shader.vertex_code, error);
-  load_text(shader.fragment_filename, shader.fragment_code, error);
+  // auto error = string{};
+  load_text(shader.vertex_filename, shader.vertex_code);
+  load_text(shader.fragment_filename, shader.fragment_code);
 }
 
 Shader make_shader_from_file(const string& vertex_filename,
@@ -247,21 +253,21 @@ void init_texture(Texture& texture, const vec2i& size, bool as_float,
 
 void init_texture(Texture& texture, const image<vec4f>& img, bool as_float,
     bool linear, bool mipmap) {
-  init_texture(texture, img.imsize(), as_float, false, linear, mipmap);
+  init_texture(texture, img.size(), as_float, false, linear, mipmap);
   update_texture(texture, img, mipmap);
 }
 
 void init_texture(Texture& texture, const image<vec4b>& img, bool as_srgb,
     bool linear, bool mipmap) {
-  init_texture(texture, img.imsize(), false, as_srgb, linear, mipmap);
+  init_texture(texture, img.size(), false, as_srgb, linear, mipmap);
   update_texture(texture, img, mipmap);
 }
 
 void update_texture(Texture& texture, const image<vec4f>& img, bool mipmap) {
   check_error();
   glBindTexture(GL_TEXTURE_2D, texture.id);
-  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, img.imsize().x, img.imsize().y,
-      GL_RGBA, GL_FLOAT, img.data());
+  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, img.size().x, img.size().y, GL_RGBA,
+      GL_FLOAT, img.data());
   if (mipmap) glGenerateMipmap(GL_TEXTURE_2D);
   check_error();
 }
@@ -282,8 +288,8 @@ void update_texture(Texture& texture, const image<vec4f>& img, bool mipmap) {
 void update_texture(Texture& texture, const image<vec4b>& img, bool mipmap) {
   check_error();
   glBindTexture(GL_TEXTURE_2D, texture.id);
-  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, img.imsize().x, img.imsize().y,
-      GL_RGBA, GL_UNSIGNED_BYTE, img.data());
+  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, img.size().x, img.size().y, GL_RGBA,
+      GL_UNSIGNED_BYTE, img.data());
   if (mipmap) glGenerateMipmap(GL_TEXTURE_2D);
   check_error();
 }
@@ -805,8 +811,15 @@ Camera make_lookat_camera(const vec3f& from, const vec3f& to, const vec3f& up) {
   return camera;
 }
 
+inline mat4f frame_to_mat(const frame3f& f) {
+  return {{f.x.x, f.x.y, f.x.z, 0}, {f.y.x, f.y.y, f.y.z, 0},
+      {f.z.x, f.z.y, f.z.z, 0}, {f.o.x, f.o.y, f.o.z, 1}};
+}
+
 mat4f make_view_matrix(const Camera& camera) {
-  return frame_to_mat(inverse(camera.frame));
+  auto frame = inverse(camera.frame);
+  // frame to mat
+  return frame_to_mat(frame);
 }
 
 mat4f make_projection_matrix(const Camera& camera, const vec2i& viewport) {
